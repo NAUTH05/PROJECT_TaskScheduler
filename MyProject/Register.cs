@@ -10,7 +10,6 @@ namespace MyProject
         {
             InitializeComponent();
 
-
             txtUsername.KeyDown += TextBox_KeyDown;
             txtEmail.KeyDown += TextBox_KeyDown;
             txtPassword.KeyDown += TextBox_KeyDown;
@@ -42,91 +41,95 @@ namespace MyProject
 
         private async void btnRegister_Click(object sender, EventArgs e)
         {
-            using (HttpClient client = new HttpClient())
+            if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
+                string.IsNullOrWhiteSpace(txtEmail.Text) ||
+                string.IsNullOrWhiteSpace(txtPassword.Text) ||
+                string.IsNullOrWhiteSpace(txtConfirmPassword.Text))
             {
-                try
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (txtUsername.Text.Trim().Length < 3)
+            {
+                MessageBox.Show("Username phải có ít nhất 3 ký tự!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtUsername.Focus();
+                return;
+            }
+
+            if (!IsValidEmail(txtEmail.Text.Trim()))
+            {
+                MessageBox.Show("Email không hợp lệ!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtEmail.Focus();
+                return;
+            }
+
+            if (txtPassword.Text != txtConfirmPassword.Text)
+            {
+                MessageBox.Show("Mật khẩu xác nhận không khớp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtConfirmPassword.Focus();
+                return;
+            }
+
+            if (txtPassword.Text.Length < 6)
+            {
+                MessageBox.Show("Mật khẩu phải có ít nhất 6 ký tự!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtPassword.Focus();
+                return;
+            }
+
+            HttpClient client = new HttpClient();
+            
+            try
+            {
+                var registerData = new
                 {
-                    if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
-                        string.IsNullOrWhiteSpace(txtEmail.Text) ||
-                        string.IsNullOrWhiteSpace(txtPassword.Text) ||
-                        string.IsNullOrWhiteSpace(txtConfirmPassword.Text))
-                    {
-                        MessageBox.Show("Vui lòng nhập đầy đủ thông tin.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
+                    userName = txtUsername.Text.Trim(),
+                    email = txtEmail.Text.Trim(),
+                    password = txtPassword.Text
+                };
 
-                    if (txtUsername.Text.Trim().Length < 3)
-                    {
-                        MessageBox.Show("Username phải có ít nhất 3 ký tự!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        txtUsername.Focus();
-                        return;
-                    }
+                var json = JsonSerializer.Serialize(registerData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    if (!IsValidEmail(txtEmail.Text.Trim()))
-                    {
-                        MessageBox.Show("Email không hợp lệ!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        txtEmail.Focus();
-                        return;
-                    }
+                var response = await client.PostAsync("https://nauth.fitlhu.com/api/register", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (txtPassword.Text != txtConfirmPassword.Text)
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
                     {
-                        MessageBox.Show("Mật khẩu xác nhận không khớp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        txtConfirmPassword.Focus();
-                        return;
-                    }
-
-                    if (txtPassword.Text.Length < 6)
-                    {
-                        MessageBox.Show("Mật khẩu phải có ít nhất 6 ký tự!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        txtPassword.Focus();
-                        return;
-                    }
-
-                    var registerData = new
-                    {
-                        userName = txtUsername.Text.Trim(),
-                        email = txtEmail.Text.Trim(),
-                        password = txtPassword.Text
+                        PropertyNameCaseInsensitive = true
                     };
+                    var result = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, options);
 
-                    var json = JsonSerializer.Serialize(registerData);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    MessageBox.Show($"Đăng ký thành công!\n{result?.Message}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    var response = await client.PostAsync("http://localhost:5000/api/register", content);
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        MessageBox.Show($"Đăng ký thành công!\n{result?.Message}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
-                    }
-                    else
-                    {
-                        var errorResult = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        MessageBox.Show($"Đăng ký thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
                 }
-                catch (HttpRequestException ex)
+                else
                 {
-                    MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var errorResult = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, options);
+
+                    MessageBox.Show($"Đăng ký thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                client.Dispose();
             }
         }
 

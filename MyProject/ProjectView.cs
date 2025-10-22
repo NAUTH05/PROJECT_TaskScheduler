@@ -229,7 +229,7 @@ namespace MyProject
                 using (HttpClient client = new HttpClient())
                 {
                     // GET tasks by ProjectID
-                    var response = await client.GetAsync($"http://localhost:5000/api/tasks?ProjectID={projectId}");
+                    var response = await client.GetAsync($"https://nauth.fitlhu.com/api/tasks?ProjectID={projectId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
@@ -442,7 +442,7 @@ namespace MyProject
                     var json = JsonSerializer.Serialize(updateData);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    var response = await client.PutAsync($"http://localhost:5000/api/tasks/{task.TaskID}", content);
+                    var response = await client.PutAsync($"https://nauth.fitlhu.com/api/tasks/{task.TaskID}", content);
                     
                     if (response.IsSuccessStatusCode)
                     {
@@ -518,7 +518,7 @@ namespace MyProject
 
                     using (HttpClient client = new HttpClient())
                     {
-                        var response = await client.DeleteAsync($"http://localhost:5000/api/tasks/{taskId}");
+                        var response = await client.DeleteAsync($"https://nauth.fitlhu.com/api/tasks/{taskId}");
                         var responseContent = await response.Content.ReadAsStringAsync();
 
                         if (response.IsSuccessStatusCode)
@@ -594,7 +594,7 @@ namespace MyProject
                         // Use projectId variable (which contains the ProjectID value from constructor)
                         System.Diagnostics.Debug.WriteLine($"Updating project: {projectId} with status: {newStatus}");
                         
-                        var response = await client.PutAsync($"http://localhost:5000/api/projects/{projectId}", content);
+                        var response = await client.PutAsync($"https://nauth.fitlhu.com/api/projects/{projectId}", content);
                         var responseContent = await response.Content.ReadAsStringAsync();
                         
                         System.Diagnostics.Debug.WriteLine($"Response: {responseContent}");

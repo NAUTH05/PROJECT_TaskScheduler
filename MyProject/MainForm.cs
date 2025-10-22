@@ -83,7 +83,7 @@ namespace MyProject
                 using (HttpClient client = new HttpClient())
                 {
                     // GET projects by OwnerUserID
-                    var response = await client.GetAsync($"http://localhost:5000/api/projects?OwnerUserID={currentUserId}");
+                    var response = await client.GetAsync($"https://nauth.fitlhu.com/api/projects?OwnerUserID={currentUserId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
@@ -454,7 +454,7 @@ namespace MyProject
                 using (HttpClient client = new HttpClient())
                 {
                     // DELETE request to API
-                    var response = await client.DeleteAsync($"http://localhost:5000/api/projects/{projectId}");
+                    var response = await client.DeleteAsync($"https://nauth.fitlhu.com/api/projects/{projectId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)

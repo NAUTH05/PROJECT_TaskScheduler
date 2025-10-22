@@ -48,89 +48,91 @@ namespace MyProject
 
         private async void btnLogin_Click(object sender, EventArgs e)
         {
-            using (HttpClient client = new HttpClient())
+            if (string.IsNullOrWhiteSpace(txtUsernameOrEmail.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
             {
-                try
-                {
-                    if (string.IsNullOrWhiteSpace(txtUsernameOrEmail.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
-                    {
-                        MessageBox.Show("Vui lòng nhập đầy đủ thông tin đăng nhập.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
-                    }
+                MessageBox.Show("Vui lòng nhập đầy đủ thông tin đăng nhập.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
 
-                    var userInput = txtUsernameOrEmail.Text.Trim();
+            HttpClient client = new HttpClient();
+            
+            try
+            {
+                var userInput = txtUsernameOrEmail.Text.Trim();
+                object loginData;
+                
+                if (IsValidEmail(userInput))
+                {
+                    loginData = new
+                    {
+                        email = userInput,
+                        password = txtPassword.Text
+                    };
+                }
+                else
+                {
+                    loginData = new
+                    {
+                        userName = userInput,
+                        password = txtPassword.Text
+                    };
+                }
+
+                var json = JsonSerializer.Serialize(loginData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://nauth.fitlhu.com/api/login", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+
+                    string welcomeName = result?.Data?.UserName ?? result?.Data?.Email;
+                    MessageBox.Show($"Đăng nhập thành công!\nChào mừng {welcomeName}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                    string userName = result?.Data?.UserName ?? result?.Data?.Email ?? "User";
+                    string userId = result?.Data?._id ?? "";
                     
-                    object loginData;
-                    if (IsValidEmail(userInput))
+                    var mainForm = new MainForm(userName, userId);
+                    this.Hide();
+
+                    mainForm.FormClosed += (s, args) =>
                     {
-                        loginData = new
-                        {
-                            email = userInput,
-                            password = txtPassword.Text
-                        };
-                    }
-                    else
-                    {
-                        loginData = new
-                        {
-                            userName = userInput,
-                            password = txtPassword.Text
-                        };
-                    }
-
-                    var json = JsonSerializer.Serialize(loginData);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-
-                    var response = await client.PostAsync("http://26.224.210.28:5000/api/login", content);
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        MessageBox.Show($"Đăng nhập thành công!\nChào mừng {result?.Data?.UserName ?? result?.Data?.Email}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                        // Truyền cả userName và userId vào MainForm
-                        var mainForm = new MainForm(
-                            result?.Data?.UserName ?? result?.Data?.Email ?? "User",
-                            result?.Data?._id ?? ""
-                        );
-                        this.Hide();
-                        
-
-                        mainForm.FormClosed += (s, args) =>
-                        {
-                            this.Show();
-                            txtUsernameOrEmail.Clear();
-                            txtPassword.Clear();
-                            txtUsernameOrEmail.Focus();
-                        };
-                        
-                        mainForm.Show();
-                    }
-                    else
-                    {
-                        var errorResult = JsonSerializer.Deserialize<ApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        MessageBox.Show($"Đăng nhập thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                        this.Show();
+                        txtUsernameOrEmail.Clear();
+                        txtPassword.Clear();
+                        txtUsernameOrEmail.Focus();
+                    };
+                    
+                    mainForm.Show();
                 }
-                catch (HttpRequestException ex)
+                else
                 {
-                    MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var errorResult = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+
+                    MessageBox.Show($"Đăng nhập thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                client.Dispose();
             }
         }
 
@@ -143,7 +145,6 @@ namespace MyProject
         {
             var registerForm = new Register();
             registerForm.ShowDialog();
-            
 
             if (registerForm.DialogResult == DialogResult.OK)
             {
@@ -153,7 +154,6 @@ namespace MyProject
             }
         }
     }
-
 
     public class ApiResponse
     {

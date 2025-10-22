@@ -25,19 +25,16 @@ namespace MyProject
 
         private void InitializeForm()
         {
-            // Set default values
-            cboPriority.SelectedIndex = 1; // Medium
-            cboStatus.SelectedIndex = 0; // To Do
-            dtpDueDate.Value = DateTime.Now.AddDays(7); // Default 7 days from now
+            cboPriority.SelectedIndex = 1;
+            cboStatus.SelectedIndex = 0;
+            dtpDueDate.Value = DateTime.Now.AddDays(7);
             
-            // Set placeholder text
             txtTaskName.Text = "Ví dụ: Viết API cho CRUD Task";
             txtTaskName.ForeColor = System.Drawing.Color.Gray;
             
             txtDescription.Text = "Chi tiết yêu cầu và tiêu chí hoàn thành.";
             txtDescription.ForeColor = System.Drawing.Color.Gray;
             
-            // Style the form
             this.BackColor = System.Drawing.Color.FromArgb(240, 240, 240);
         }
 
@@ -83,7 +80,6 @@ namespace MyProject
 
         private async void btnCreate_Click(object sender, EventArgs e)
         {
-            // Validate input
             if (isTaskNamePlaceholder || string.IsNullOrWhiteSpace(txtTaskName.Text))
             {
                 MessageBox.Show("Vui lòng nhập tên nhiệm vụ.", "Thông báo", 
@@ -116,56 +112,53 @@ namespace MyProject
                 return;
             }
 
-            // Disable buttons while processing
             btnCreate.Enabled = false;
             btnCancel.Enabled = false;
             btnCreate.Text = "Đang tạo...";
 
+            HttpClient client = new HttpClient();
+            
             try
             {
-                using (HttpClient client = new HttpClient())
+                var taskData = new
                 {
-                    // Create task data
-                    var taskData = new
+                    ProjectID = projectId,
+                    TaskName = txtTaskName.Text.Trim(),
+                    TaskDescription = txtDescription.Text.Trim(),
+                    DueDate = dtpDueDate.Value.ToString("yyyy-MM-dd"),
+                    Priority = cboPriority.SelectedItem.ToString(),
+                    Status = cboStatus.SelectedItem.ToString(),
+                    AssignedToUserID = currentUserId
+                };
+
+                var json = JsonSerializer.Serialize(taskData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://nauth.fitlhu.com/api/tasks", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
                     {
-                        ProjectID = projectId,
-                        TaskName = txtTaskName.Text.Trim(),
-                        TaskDescription = txtDescription.Text.Trim(),
-                        DueDate = dtpDueDate.Value.ToString("yyyy-MM-dd"),
-                        Priority = cboPriority.SelectedItem.ToString(),
-                        Status = cboStatus.SelectedItem.ToString(),
-                        AssignedToUserID = currentUserId
+                        PropertyNameCaseInsensitive = true
                     };
+                    var result = JsonSerializer.Deserialize<TaskApiResponse>(responseContent, options);
 
-                    var json = JsonSerializer.Serialize(taskData);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    IsSuccess = true;
 
-                    // POST to API
-                    var response = await client.PostAsync("http://localhost:5000/api/tasks", content);
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"Tạo nhiệm vụ thành công!\n{result?.Message}", "Thành công", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var result = JsonSerializer.Deserialize<TaskApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        IsSuccess = true;
-
-                        MessageBox.Show($"Tạo nhiệm vụ thành công!\n{result?.Message}", "Thành công", 
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Tạo nhiệm vụ thất bại!\n{responseContent}", "Lỗi", 
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        
-                        IsSuccess = false;
-                    }
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+                else
+                {
+                    MessageBox.Show($"Tạo nhiệm vụ thất bại!\n{responseContent}", "Lỗi", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    
+                    IsSuccess = false;
                 }
             }
             catch (HttpRequestException ex)
@@ -182,7 +175,7 @@ namespace MyProject
             }
             finally
             {
-                // Re-enable buttons
+                client.Dispose();
                 btnCreate.Enabled = true;
                 btnCancel.Enabled = true;
                 btnCreate.Text = "Tạo Nhiệm Vụ";
@@ -195,7 +188,6 @@ namespace MyProject
             this.Close();
         }
 
-        // API Response class
         public class TaskApiResponse
         {
             public string Message { get; set; }

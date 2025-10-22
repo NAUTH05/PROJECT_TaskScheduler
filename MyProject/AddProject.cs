@@ -32,14 +32,11 @@ namespace MyProject
 
         private void InitializeForm()
         {
-            // Set default values
-            cboStatus.SelectedIndex = 1; // "Đang Tiến Hành (In Progress)"
-            dtpDeadline.Value = DateTime.Now.AddDays(30); // Default 30 days from now
+            cboStatus.SelectedIndex = 1;
+            dtpDeadline.Value = DateTime.Now.AddDays(30);
             
-            // Style the form
             this.BackColor = Color.FromArgb(240, 240, 240);
             
-            // Add rounded corners to buttons
             btnCreate.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -113,7 +110,6 @@ namespace MyProject
 
         private async void btnCreate_Click(object sender, EventArgs e)
         {
-            // Validate input
             if (isProjectNamePlaceholder || string.IsNullOrWhiteSpace(txtProjectName.Text))
             {
                 MessageBox.Show("Vui lòng nhập tên dự án.", "Thông báo", 
@@ -138,68 +134,64 @@ namespace MyProject
                 return;
             }
 
-            // Disable buttons while processing
             btnCreate.Enabled = false;
             btnCancel.Enabled = false;
             btnCreate.Text = "Đang tạo...";
 
+            HttpClient client = new HttpClient();
+            
             try
             {
-                using (HttpClient client = new HttpClient())
+                string statusValue = MapStatusToEnglish(cboStatus.SelectedItem.ToString());
+
+                var projectData = new
                 {
-                    // Map status from Vietnamese to English
-                    string statusValue = MapStatusToEnglish(cboStatus.SelectedItem.ToString());
+                    ProjectName = txtProjectName.Text.Trim(),
+                    ProjectDescription = txtDescription.Text.Trim(),
+                    StartDate = DateTime.Now.ToString("yyyy-MM-dd"),
+                    EndDate = dtpDeadline.Value.ToString("yyyy-MM-dd"),
+                    Status = statusValue,
+                    OwnerUserID = currentUserId
+                };
 
-                    // Create project data
-                    var projectData = new
+                var json = JsonSerializer.Serialize(projectData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("https://nauth.fitlhu.com/api/projects", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var options = new JsonSerializerOptions
                     {
-                        ProjectName = txtProjectName.Text.Trim(),
-                        ProjectDescription = txtDescription.Text.Trim(),
-                        StartDate = DateTime.Now.ToString("yyyy-MM-dd"),
-                        EndDate = dtpDeadline.Value.ToString("yyyy-MM-dd"),
-                        Status = statusValue,
-                        OwnerUserID = currentUserId
+                        PropertyNameCaseInsensitive = true
                     };
+                    var result = JsonSerializer.Deserialize<AddProjectApiResponse>(responseContent, options);
 
-                    var json = JsonSerializer.Serialize(projectData);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+                    ProjectName = txtProjectName.Text.Trim();
+                    ProjectDescription = txtDescription.Text.Trim();
+                    Deadline = dtpDeadline.Value;
+                    Status = cboStatus.SelectedItem.ToString();
+                    IsSuccess = true;
 
-                    // POST to API
-                    var response = await client.PostAsync("http://localhost:5000/api/projects", content);
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"Tạo dự án thành công!\n{result?.Message}", "Thành công", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    if (response.IsSuccessStatusCode)
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
+                }
+                else
+                {
+                    var options = new JsonSerializerOptions
                     {
-                        var result = JsonSerializer.Deserialize<AddProjectApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        PropertyNameCaseInsensitive = true
+                    };
+                    var errorResult = JsonSerializer.Deserialize<AddProjectApiResponse>(responseContent, options);
 
-                        // Set properties
-                        ProjectName = txtProjectName.Text.Trim();
-                        ProjectDescription = txtDescription.Text.Trim();
-                        Deadline = dtpDeadline.Value;
-                        Status = cboStatus.SelectedItem.ToString();
-                        IsSuccess = true;
-
-                        MessageBox.Show($"Tạo dự án thành công!\n{result?.Message}", "Thành công", 
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-                        this.DialogResult = DialogResult.OK;
-                        this.Close();
-                    }
-                    else
-                    {
-                        var errorResult = JsonSerializer.Deserialize<AddProjectApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
-
-                        MessageBox.Show($"Tạo dự án thất bại!\n{errorResult?.Message}", "Lỗi", 
-                            MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        
-                        IsSuccess = false;
-                    }
+                    MessageBox.Show($"Tạo dự án thất bại!\n{errorResult?.Message}", "Lỗi", 
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    
+                    IsSuccess = false;
                 }
             }
             catch (HttpRequestException ex)
@@ -216,7 +208,7 @@ namespace MyProject
             }
             finally
             {
-                // Re-enable buttons
+                client.Dispose();
                 btnCreate.Enabled = true;
                 btnCancel.Enabled = true;
                 btnCreate.Text = "Tạo Dự Án";
@@ -244,7 +236,6 @@ namespace MyProject
         }
     }
 
-    // API Response classes for AddProject
     public class AddProjectApiResponse
     {
         public string Message { get; set; }
