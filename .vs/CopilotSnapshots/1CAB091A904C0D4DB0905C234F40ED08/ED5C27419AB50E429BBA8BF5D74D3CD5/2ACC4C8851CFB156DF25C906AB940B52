@@ -1,0 +1,150 @@
+﻿using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+namespace MyProject
+{
+    public partial class Register : Form
+    {
+        public Register()
+        {
+            InitializeComponent();
+            
+            // Thêm event handler cho KeyDown
+            txtEmail.KeyDown += TextBox_KeyDown;
+            txtPassword.KeyDown += TextBox_KeyDown;
+            txtConfirmPassword.KeyDown += TextBox_KeyDown;
+        }
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnRegister_Click(sender, e);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var regex = new Regex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+                return regex.IsMatch(email);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async void btnRegister_Click(object sender, EventArgs e)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    // Validate input
+                    if (string.IsNullOrWhiteSpace(txtEmail.Text) || 
+                        string.IsNullOrWhiteSpace(txtPassword.Text) || 
+                        string.IsNullOrWhiteSpace(txtConfirmPassword.Text))
+                    {
+                        MessageBox.Show("Vui lòng nhập đầy đủ thông tin.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // Validate email format
+                    if (!IsValidEmail(txtEmail.Text.Trim()))
+                    {
+                        MessageBox.Show("Email không hợp lệ!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        txtEmail.Focus();
+                        return;
+                    }
+
+                    // Validate password match
+                    if (txtPassword.Text != txtConfirmPassword.Text)
+                    {
+                        MessageBox.Show("Mật khẩu xác nhận không khớp!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        txtConfirmPassword.Focus();
+                        return;
+                    }
+
+                    // Validate password length
+                    if (txtPassword.Text.Length < 6)
+                    {
+                        MessageBox.Show("Mật khẩu phải có ít nhất 6 ký tự!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        txtPassword.Focus();
+                        return;
+                    }
+
+                    // Tạo JSON object để gửi lên server
+                    var registerData = new
+                    {
+                        email = txtEmail.Text.Trim(),
+                        password = txtPassword.Text
+                    };
+
+                    var json = JsonSerializer.Serialize(registerData);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    // POST request đến endpoint /api/register
+                    var response = await client.PostAsync("http://26.224.210.28:5000/api/register", content);
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        MessageBox.Show($"Đăng ký thành công!\n{result?.Message}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        // Đóng form Register và quay lại Login
+                        this.DialogResult = DialogResult.OK;
+                        this.Close();
+                    }
+                    else
+                    {
+                        var errorResult = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        MessageBox.Show($"Đăng ký thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnBackToLogin_Click(object sender, EventArgs e)
+        {
+            // Đóng form Register và quay lại Login
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+    }
+
+    // Classes để deserialize JSON response
+    public class RegisterApiResponse
+    {
+        public string Message { get; set; }
+        public RegisterUserData Data { get; set; }
+    }
+
+    public class RegisterUserData
+    {
+        public string _id { get; set; }
+        public string Email { get; set; }
+    }
+}

@@ -1,0 +1,129 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace MyProject
+{
+    public partial class AddProject : Form
+    {
+        private bool isPlaceholder = true;
+        
+        public string ProjectName { get; private set; }
+        public DateTime Deadline { get; private set; }
+        public string Status { get; private set; }
+
+        public AddProject()
+        {
+            InitializeComponent();
+            InitializeForm();
+        }
+
+        private void InitializeForm()
+        {
+            // Set default values
+            cboStatus.SelectedIndex = 0; // "Chờ Làm (To Do)"
+            dtpDeadline.Value = DateTime.Now.AddDays(30); // Default 30 days from now
+            
+            // Style the form
+            this.BackColor = Color.FromArgb(240, 240, 240);
+            
+            // Add rounded corners to buttons
+            btnCreate.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var path = GetRoundedRectPath(btnCreate.ClientRectangle, 5))
+                {
+                    btnCreate.Region = new Region(path);
+                }
+            };
+
+            btnCancel.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                using (var path = GetRoundedRectPath(btnCancel.ClientRectangle, 5))
+                {
+                    btnCancel.Region = new Region(path);
+                }
+            };
+
+            // Add rounded corners to text box
+            txtProjectName.Paint += (s, e) =>
+            {
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            };
+        }
+
+        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRectPath(Rectangle rect, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            float r = radius;
+            path.AddArc(rect.X, rect.Y, r, r, 180, 90);
+            path.AddArc(rect.Right - r, rect.Y, r, r, 270, 90);
+            path.AddArc(rect.Right - r, rect.Bottom - r, r, r, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - r, r, r, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+
+        private void txtProjectName_Enter(object sender, EventArgs e)
+        {
+            if (isPlaceholder)
+            {
+                txtProjectName.Text = "";
+                txtProjectName.ForeColor = Color.Black;
+                isPlaceholder = false;
+            }
+        }
+
+        private void txtProjectName_Leave(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtProjectName.Text))
+            {
+                txtProjectName.Text = "Ví dụ: Triển khai ứng dụng TaskScheduler";
+                txtProjectName.ForeColor = Color.Gray;
+                isPlaceholder = true;
+            }
+        }
+
+        private void btnCreate_Click(object sender, EventArgs e)
+        {
+            // Validate input
+            if (isPlaceholder || string.IsNullOrWhiteSpace(txtProjectName.Text))
+            {
+                MessageBox.Show("Vui lòng nhập tên dự án.", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                txtProjectName.Focus();
+                return;
+            }
+
+            if (cboStatus.SelectedIndex == -1)
+            {
+                MessageBox.Show("Vui lòng chọn trạng thái ban đầu.", "Thông báo", 
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                cboStatus.Focus();
+                return;
+            }
+
+            // Set properties
+            ProjectName = txtProjectName.Text.Trim();
+            Deadline = dtpDeadline.Value;
+            Status = cboStatus.SelectedItem.ToString();
+
+            // Set dialog result
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            this.DialogResult = DialogResult.Cancel;
+            this.Close();
+        }
+    }
+}

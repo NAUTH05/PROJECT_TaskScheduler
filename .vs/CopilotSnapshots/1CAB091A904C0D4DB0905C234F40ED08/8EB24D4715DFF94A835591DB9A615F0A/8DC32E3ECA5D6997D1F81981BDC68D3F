@@ -1,0 +1,142 @@
+﻿using System.Text;
+using System.Text.Json;
+
+namespace MyProject
+{
+    public partial class Login : Form
+    {
+        public Login()
+        {
+            InitializeComponent();
+            
+            // Thêm event handler cho KeyDown
+            txtUsername.KeyDown += TextBox_KeyDown;
+            txtPassword.KeyDown += TextBox_KeyDown;
+        }
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                btnLogin_Click(sender, e);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void txtUsername_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtPassword_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private async void btnLogin_Click(object sender, EventArgs e)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    // Validate input
+                    if (string.IsNullOrWhiteSpace(txtUsername.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
+                    {
+                        MessageBox.Show("Vui lòng nhập đầy đủ username và password.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return;
+                    }
+
+                    // Tạo JSON object để gửi lên server
+                    var loginData = new
+                    {
+                        userName = txtUsername.Text.Trim(),
+                        password = txtPassword.Text
+                    };
+
+                    var json = JsonSerializer.Serialize(loginData);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    // POST request đến endpoint /api/login
+                    var response = await client.PostAsync("http://26.224.210.28:5000/api/login", content);
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        MessageBox.Show($"Đăng nhập thành công!\nChào mừng {result?.Data?.UserName}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                        var mainForm = new MainForm();
+                        this.Hide();
+                        
+                        // Khi MainForm đóng, hiển thị lại Login
+                        mainForm.FormClosed += (s, args) =>
+                        {
+                            this.Show();
+                            txtUsername.Clear();
+                            txtPassword.Clear();
+                            txtUsername.Focus();
+                        };
+                        
+                        mainForm.Show();
+                    }
+                    else
+                    {
+                        var errorResult = JsonSerializer.Deserialize<ApiResponse>(responseContent, new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        });
+
+                        MessageBox.Show($"Đăng nhập thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                }
+                catch (HttpRequestException ex)
+                {
+                    MessageBox.Show($"Không thể kết nối đến server.\nVui lòng kiểm tra:\n- Server đang chạy\n- URL đúng\n\nChi tiết: {ex.Message}", "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void btnLogin_KeyPress(object sender, KeyPressEventArgs e)
+        {
+
+        }
+
+        private void btnRegister_Click(object sender, EventArgs e)
+        {
+            var registerForm = new Register();
+            registerForm.ShowDialog();
+            
+            // Nếu đăng ký thành công, focus vào username
+            if (registerForm.DialogResult == DialogResult.OK)
+            {
+                txtUsername.Clear();
+                txtPassword.Clear();
+                txtUsername.Focus();
+            }
+        }
+    }
+
+    // Classes để deserialize JSON response
+    public class ApiResponse
+    {
+        public string Message { get; set; }
+        public UserData Data { get; set; }
+    }
+
+    public class UserData
+    {
+        public string _id { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
+    }
+}
