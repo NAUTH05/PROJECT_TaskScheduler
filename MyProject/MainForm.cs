@@ -17,6 +17,7 @@ namespace MyProject
         private string currentUserName = "Mock User";
         private string currentUserId = "";
         private FlowLayoutPanel flowProjectsList;
+        private List<ProjectData> currentProjects = new List<ProjectData>(); // Track projects from API
 
         public MainForm()
         {
@@ -37,6 +38,11 @@ namespace MyProject
 
         private void InitializeUI()
         {
+            // Initialize statistics to 0
+            lblStat1Value.Text = "0";
+            lblStat2Value.Text = "0";
+            lblStat3Value.Text = "0";
+            
             // Làm tròn góc cho label user avatar
             lblUserName.Paint += (s, e) =>
             {
@@ -95,10 +101,13 @@ namespace MyProject
 
                         // Clear existing projects
                         flowProjectsList.Controls.Clear();
+                        currentProjects.Clear(); // Clear tracked projects
 
                         // Add projects from API
                         if (result?.Data != null && result.Data.Count > 0)
                         {
+                            currentProjects = result.Data; // Store projects for statistics
+                            
                             foreach (var project in result.Data)
                             {
                                 // Debug: Check project data
@@ -127,8 +136,9 @@ namespace MyProject
                         }
                         else
                         {
-                            // No projects found - show empty state
+                            // No projects found - show empty state and reset stats
                             ShowEmptyState();
+                            UpdateStatistics(); // This will set all to 0
                         }
                     }
                     else
@@ -459,6 +469,9 @@ namespace MyProject
 
                     if (response.IsSuccessStatusCode)
                     {
+                        // Remove from tracked projects list
+                        currentProjects.RemoveAll(p => p.ProjectID == projectId);
+                        
                         // Remove from UI
                         flowProjectsList.Controls.Remove(projectPanel);
                         projectPanel.Dispose();
@@ -540,19 +553,27 @@ namespace MyProject
 
         private void UpdateStatistics()
         {
-            // Count projects by status
-            int totalProjects = flowProjectsList.Controls.Count;
-            int planningCount = 0;
-            int inProgressCount = 0;
-            int completedCount = 0;
-            int onHoldCount = 0;
-            int cancelledCount = 0;
+            // If no projects, reset all stats to 0
+            if (currentProjects == null || currentProjects.Count == 0)
+            {
+                lblStat1Value.Text = "0";
+                lblStat2Value.Text = "0";
+                lblStat3Value.Text = "0";
+                return;
+            }
 
-            // In a real implementation, you would track this from the API data
-            // For now, we'll just show total count
+            // Count projects by status from API data
+            int totalProjects = currentProjects.Count;
+            int inProgressCount = currentProjects.Count(p => p.Status == "In Progress");
+            int completedCount = currentProjects.Count(p => p.Status == "Completed");
+
+            // Update labels with real counts
             lblStat1Value.Text = totalProjects.ToString();
             lblStat2Value.Text = inProgressCount.ToString();
             lblStat3Value.Text = completedCount.ToString();
+            
+            // Debug output
+            System.Diagnostics.Debug.WriteLine($"Statistics Updated: Total={totalProjects}, In Progress={inProgressCount}, Completed={completedCount}");
         }
     }
 
