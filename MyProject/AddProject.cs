@@ -219,13 +219,9 @@ namespace MyProject
         {
             return vietnameseStatus switch
             {
-                "Đang Lập Kế Hoạch (Planning)" => "Planning",
                 "Đang Tiến Hành (In Progress)" => "In Progress",
                 "Chờ Làm (To Do)" => "To Do",
-                "Tạm Dừng (On Hold)" => "On Hold",
                 "Hoàn Thành (Completed)" => "Completed",
-                "Đã Hủy (Cancelled)" => "Cancelled",
-                _ => "Planning"
             };
         }
 
