@@ -17,7 +17,9 @@ namespace MyProject
         private string currentUserName = "Mock User";
         private string currentUserId = "";
         private FlowLayoutPanel flowProjectsList;
-        private List<ProjectData> currentProjects = new List<ProjectData>(); // Track projects from API
+        private List<ProjectData> currentProjects = new List<ProjectData>();
+        private List<ProjectData> recentProjects = new List<ProjectData>();
+        private const int MAX_RECENT_PROJECTS = 10;
 
         public MainForm()
         {
@@ -31,19 +33,15 @@ namespace MyProject
             currentUserId = userId;
             lblWelcome.Text = $"Chào mừng, {userName}";
             lblUserName.Text = GetInitials(userName);
-            
-            // Load projects from API
             LoadProjectsFromApi();
         }
 
         private void InitializeUI()
         {
-            // Initialize statistics to 0
             lblStat1Value.Text = "0";
             lblStat2Value.Text = "0";
             lblStat3Value.Text = "0";
             
-            // Làm tròn góc cho label user avatar
             lblUserName.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -53,17 +51,14 @@ namespace MyProject
                 }
             };
 
-            // Làm tròn góc cho các stat panels
             SetRoundedCorners(panelStat1, 10);
             SetRoundedCorners(panelStat2, 10);
             SetRoundedCorners(panelStat3, 10);
 
-            // Thêm border màu cho các stat panels
             panelStat1.Paint += (s, e) => DrawLeftBorder(e.Graphics, panelStat1, Color.FromArgb(52, 152, 219), 4);
             panelStat2.Paint += (s, e) => DrawLeftBorder(e.Graphics, panelStat2, Color.FromArgb(241, 196, 15), 4);
             panelStat3.Paint += (s, e) => DrawLeftBorder(e.Graphics, panelStat3, Color.FromArgb(46, 204, 113), 4);
 
-            // Tạo FlowLayoutPanel cho projects
             flowProjectsList = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -73,13 +68,24 @@ namespace MyProject
                 Padding = new Padding(10)
             };
             panelProjectsList.Controls.Add(flowProjectsList);
+
+            lblTasksTitle.Text = "Dự Án Gần Đây";
+            
+            lblToDoTitle.Text = "In Progress Gần Đây";
+            lblInProgressTitle.Text = "To Do Gần Đây";
+            lblDoneTitle.Text = "Completed Gần Đây";
+            
+            panelToDo.Controls.Clear();
+            panelInProgress.Controls.Clear();
+            panelDone.Controls.Clear();
+
+            UpdateRecentProjectsDisplay();
         }
 
         private async void LoadProjectsFromApi()
         {
             if (string.IsNullOrEmpty(currentUserId))
             {
-                // Load sample data if no userId
                 LoadSampleProjects();
                 return;
             }
@@ -88,7 +94,6 @@ namespace MyProject
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    // GET projects by OwnerUserID
                     var response = await client.GetAsync($"https://nauth.fitlhu.com/api/projects?OwnerUserID={currentUserId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -99,27 +104,18 @@ namespace MyProject
                             PropertyNameCaseInsensitive = true
                         });
 
-                        // Clear existing projects
                         flowProjectsList.Controls.Clear();
-                        currentProjects.Clear(); // Clear tracked projects
+                        currentProjects.Clear();
 
-                        // Add projects from API
                         if (result?.Data != null && result.Data.Count > 0)
                         {
-                            currentProjects = result.Data; // Store projects for statistics
+                            currentProjects = result.Data;
                             
                             foreach (var project in result.Data)
                             {
-                                // Debug: Check project data
-                                System.Diagnostics.Debug.WriteLine($"Loading project: {project.ProjectName}");
-                                System.Diagnostics.Debug.WriteLine($"Project ID: {project.ProjectID ?? "NULL"}");
-                                System.Diagnostics.Debug.WriteLine($"Status: {project.Status}");
-                                
-                                // Parse date
                                 DateTime endDate;
                                 DateTime.TryParse(project.EndDate, out endDate);
 
-                                // Calculate progress
                                 int progress = CalculateProgress(project.Status);
 
                                 AddProjectItem(
@@ -128,7 +124,7 @@ namespace MyProject
                                     progress,
                                     project.Status,
                                     new[] { GetInitials(currentUserName) },
-                                    project.ProjectID  // Use ProjectID from API
+                                    project.ProjectID
                                 );
                             }
 
@@ -136,16 +132,15 @@ namespace MyProject
                         }
                         else
                         {
-                            // No projects found - show empty state and reset stats
                             ShowEmptyState();
-                            UpdateStatistics(); // This will set all to 0
+                            UpdateStatistics();
                         }
                     }
                     else
                     {
                         MessageBox.Show($"Không thể tải danh sách dự án.\nMã lỗi: {response.StatusCode}", 
                             "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        LoadSampleProjects(); // Fallback to sample data
+                        LoadSampleProjects();
                     }
                 }
             }
@@ -153,13 +148,13 @@ namespace MyProject
             {
                 MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}", 
                     "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoadSampleProjects(); // Fallback to sample data
+                LoadSampleProjects();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Lỗi khi tải dự án: {ex.Message}", 
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                LoadSampleProjects(); // Fallback to sample data
+                LoadSampleProjects();
             }
         }
 
@@ -167,11 +162,9 @@ namespace MyProject
         {
             return status switch
             {
-                "Planning" => 10,
                 "In Progress" => 50,
-                "On Hold" => 30,
                 "Completed" => 100,
-                "Cancelled" => 0,
+                "To Do" => 0,
                 _ => 0
             };
         }
@@ -233,16 +226,13 @@ namespace MyProject
 
         private void LoadSampleProjects()
         {
-            // Sample project 1
             AddProjectItem("Phát triển TaskScheduler Backend", "30/11/2025", 60, "In Progress",
                 new[] { "ML", "A" });
 
-            // Sample project 2
             AddProjectItem("Thiết kế UI/UX cho ứng dụng", "15/10/2025", 100, "Completed",
                 new[] { "ML", "B" });
 
-            // Sample project 3
-            AddProjectItem("Marketing và giới thiệu sản phẩm", "31/01/2026", 10, "Planning",
+            AddProjectItem("Marketing và giới thiệu sản phẩm", "31/01/2026", 10, "To Do",
                 new[] { "A", "B" });
         }
 
@@ -263,7 +253,6 @@ namespace MyProject
                 Tag = projectId
             };
 
-            // Title
             var lblTitle = new Label
             {
                 Text = title,
@@ -272,11 +261,13 @@ namespace MyProject
                 AutoSize = true,
                 Location = new Point(15, 10),
                 Cursor = Cursors.Hand,
-                Tag = projectId // Store projectId for later use
+                Tag = projectId
             };
+            
             lblTitle.Click += (s, e) => 
             {
-                // Open ProjectView form
+                AddToRecentProjects(projectId, title, deadline, status);
+                
                 var projectView = new ProjectView(
                     projectId,
                     title,
@@ -287,25 +278,18 @@ namespace MyProject
                     currentUserName
                 );
                 
-                // Use ShowDialog to wait for form to close
                 var dialogResult = projectView.ShowDialog();
                 
                 if (dialogResult == DialogResult.OK)
                 {
-                    // Show loading indicator
                     this.Text = "TaskScheduler Dashboard - Đang tải lại...";
                     this.Cursor = Cursors.WaitCursor;
-                    
-                    // Reload projects when ProjectView closes with changes
                     LoadProjectsFromApi();
-                    
-                    // Reset UI
                     this.Text = "TaskScheduler Dashboard";
                     this.Cursor = Cursors.Default;
                 }
             };
 
-            // Deadline
             var lblDeadline = new Label
             {
                 Text = $"Kết thúc: {deadline}",
@@ -315,7 +299,6 @@ namespace MyProject
                 Location = new Point(15, 40)
             };
 
-            // Progress bar
             var progressBar = new ProgressBar
             {
                 Location = new Point(450, 25),
@@ -324,7 +307,6 @@ namespace MyProject
                 Style = ProgressBarStyle.Continuous
             };
 
-            // Progress label
             var lblProgress = new Label
             {
                 Text = $"{progress}%",
@@ -333,7 +315,6 @@ namespace MyProject
                 Location = new Point(660, 25)
             };
 
-            // Member avatars
             int xPos = 750;
             foreach (var member in members)
             {
@@ -361,7 +342,6 @@ namespace MyProject
                 xPos += 40;
             }
 
-            // Status label
             var lblStatus = new Label
             {
                 Text = status,
@@ -373,7 +353,6 @@ namespace MyProject
                 ForeColor = Color.White
             };
 
-            // Làm tròn góc cho status label
             lblStatus.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -383,7 +362,6 @@ namespace MyProject
                 }
             };
 
-            // Delete button (only show if projectId is available)
             if (!string.IsNullOrEmpty(projectId))
             {
                 var btnDelete = new Button
@@ -401,11 +379,9 @@ namespace MyProject
 
                 btnDelete.FlatAppearance.BorderSize = 0;
                 
-                // Tooltip
                 var tooltip = new ToolTip();
                 tooltip.SetToolTip(btnDelete, "Xóa dự án");
 
-                // Delete button click event
                 btnDelete.Click += async (s, e) =>
                 {
                     var result = MessageBox.Show(
@@ -421,7 +397,6 @@ namespace MyProject
                     }
                 };
 
-                // Rounded corners for delete button
                 btnDelete.Paint += (s, e) =>
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -433,15 +408,9 @@ namespace MyProject
 
                 projectPanel.Controls.Add(btnDelete);
             }
-            else
-            {
-                // Debug: Show message if projectId is null
-                System.Diagnostics.Debug.WriteLine($"No delete button for project: {title} - ProjectId: {projectId ?? "NULL"}");
-            }
 
             projectPanel.Controls.AddRange(new Control[] { lblTitle, lblDeadline, progressBar, lblProgress, lblStatus });
 
-            // Làm tròn góc cho project panel
             projectPanel.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -454,32 +423,189 @@ namespace MyProject
             flowProjectsList.Controls.Add(projectPanel);
         }
 
+        private void AddToRecentProjects(string projectId, string title, string deadline, string status)
+        {
+            if (string.IsNullOrEmpty(projectId)) return;
+
+            var project = currentProjects.FirstOrDefault(p => p.ProjectID == projectId);
+            if (project == null) return;
+
+            recentProjects.RemoveAll(p => p.ProjectID == projectId);
+            recentProjects.Insert(0, project);
+
+            if (recentProjects.Count > MAX_RECENT_PROJECTS)
+            {
+                recentProjects.RemoveAt(recentProjects.Count - 1);
+            }
+
+            UpdateRecentProjectsDisplay();
+        }
+
+        private void UpdateRecentProjectsDisplay()
+        {
+            panelToDo.Controls.Clear();
+            panelInProgress.Controls.Clear();
+            panelDone.Controls.Clear();
+
+            if (recentProjects.Count == 0)
+            {
+                var emptyLabel = new Label
+                {
+                    Text = "Chưa có dự án gần đây\n\nNhấn vào dự án để xem chi tiết",
+                    Font = new Font("Segoe UI", 10F, FontStyle.Italic),
+                    ForeColor = Color.Gray,
+                    AutoSize = false,
+                    Size = new Size(panelTaskColumns.Width - 40, 100),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Location = new Point(20, 80)
+                };
+                panelToDo.Controls.Add(emptyLabel);
+                return;
+            }
+
+            var inProgressProjects = recentProjects.Where(p => p.Status == "In Progress").ToList();
+            var toDoProjects = recentProjects.Where(p => p.Status == "To Do").ToList();
+            var completedProjects = recentProjects.Where(p => p.Status == "Completed").ToList();
+
+            AddRecentProjectsToPanel(panelToDo, inProgressProjects, "In Progress");
+            AddRecentProjectsToPanel(panelInProgress, toDoProjects, "To Do");
+            AddRecentProjectsToPanel(panelDone, completedProjects, "Completed");
+        }
+
+        private void AddRecentProjectsToPanel(Panel targetPanel, List<ProjectData> projects, string statusType)
+        {
+            if (projects.Count == 0)
+            {
+                var emptyLabel = new Label
+                {
+                    Text = $"Chưa có dự án\n{statusType} gần đây",
+                    Font = new Font("Segoe UI", 9F, FontStyle.Italic),
+                    ForeColor = Color.Gray,
+                    AutoSize = false,
+                    Size = new Size(targetPanel.Width - 30, 60),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Location = new Point(15, 50)
+                };
+                targetPanel.Controls.Add(emptyLabel);
+                return;
+            }
+
+            int yPos = 50;
+            foreach (var project in projects.Take(3))
+            {
+                DateTime endDate;
+                DateTime.TryParse(project.EndDate, out endDate);
+
+                var recentCard = new Panel
+                {
+                    Width = targetPanel.Width - 30,
+                    Height = 80,
+                    BackColor = Color.FromArgb(250, 250, 250),
+                    Location = new Point(15, yPos),
+                    Cursor = Cursors.Hand,
+                    Tag = project.ProjectID
+                };
+
+                var lblName = new Label
+                {
+                    Text = project.ProjectName.Length > 25 ? project.ProjectName.Substring(0, 25) + "..." : project.ProjectName,
+                    Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                    ForeColor = Color.FromArgb(88, 86, 214),
+                    Location = new Point(10, 10),
+                    Size = new Size(recentCard.Width - 20, 25),
+                    Cursor = Cursors.Hand
+                };
+
+                var lblDate = new Label
+                {
+                    Text = $"Hạn: {endDate:dd/MM/yyyy}",
+                    Font = new Font("Segoe UI", 8F),
+                    ForeColor = Color.Gray,
+                    Location = new Point(10, 40),
+                    AutoSize = true,
+                    Cursor = Cursors.Hand
+                };
+
+                var lblStatusSmall = new Label
+                {
+                    Text = project.Status,
+                    Font = new Font("Segoe UI", 7F, FontStyle.Bold),
+                    ForeColor = Color.White,
+                    BackColor = GetStatusColor(project.Status),
+                    Location = new Point(10, 58),
+                    Size = new Size(80, 18),
+                    TextAlign = ContentAlignment.MiddleCenter
+                };
+
+                lblStatusSmall.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    using (var path = GetRoundedRectPath(lblStatusSmall.ClientRectangle, 3))
+                    {
+                        lblStatusSmall.Region = new Region(path);
+                    }
+                };
+
+                EventHandler clickHandler = (s, e) =>
+                {
+                    var projectView = new ProjectView(
+                        project.ProjectID,
+                        project.ProjectName,
+                        project.ProjectDescription,
+                        endDate.ToString("dd/MM/yyyy"),
+                        project.Status,
+                        currentUserId,
+                        currentUserName
+                    );
+                    
+                    if (projectView.ShowDialog() == DialogResult.OK)
+                    {
+                        LoadProjectsFromApi();
+                    }
+                };
+
+                recentCard.Click += clickHandler;
+                lblName.Click += clickHandler;
+                lblDate.Click += clickHandler;
+
+                recentCard.Paint += (s, e) =>
+                {
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    using (var path = GetRoundedRectPath(recentCard.ClientRectangle, 5))
+                    {
+                        recentCard.Region = new Region(path);
+                    }
+                };
+
+                recentCard.Controls.AddRange(new Control[] { lblName, lblDate, lblStatusSmall });
+                targetPanel.Controls.Add(recentCard);
+
+                yPos += 90;
+            }
+        }
+
         private async Task DeleteProject(string projectId, Panel projectPanel)
         {
             try
             {
-                // Disable the panel while deleting
                 projectPanel.Enabled = false;
 
                 using (HttpClient client = new HttpClient())
                 {
-                    // DELETE request to API
                     var response = await client.DeleteAsync($"https://nauth.fitlhu.com/api/projects/{projectId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
                     {
-                        // Remove from tracked projects list
                         currentProjects.RemoveAll(p => p.ProjectID == projectId);
+                        recentProjects.RemoveAll(p => p.ProjectID == projectId);
                         
-                        // Remove from UI
                         flowProjectsList.Controls.Remove(projectPanel);
                         projectPanel.Dispose();
 
-                        // Update statistics
                         UpdateStatistics();
+                        UpdateRecentProjectsDisplay();
 
-                        // Check if empty
                         if (flowProjectsList.Controls.Count == 0)
                         {
                             ShowEmptyState();
@@ -498,7 +624,6 @@ namespace MyProject
                         MessageBox.Show($"Xóa dự án thất bại!\n{errorResult?.Message ?? responseContent}",
                             "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                        // Re-enable panel if delete failed
                         projectPanel.Enabled = true;
                     }
                 }
@@ -522,18 +647,14 @@ namespace MyProject
             return status switch
             {
                 "To Do" => Color.FromArgb(231, 76, 60),
-                "Planning" => Color.FromArgb(155, 89, 182), // Purple
                 "In Progress" => Color.FromArgb(241, 196, 15),
-                "On Hold" => Color.FromArgb(243, 156, 18), // Orange
                 "Completed" => Color.FromArgb(46, 204, 113),
-                "Cancelled" => Color.FromArgb(149, 165, 166), // Gray
                 _ => Color.Gray
             };
         }
 
         private void btnAddProject_Click(object sender, EventArgs e)
         {
-            // Check if userId is available
             if (string.IsNullOrEmpty(currentUserId))
             {
                 MessageBox.Show("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", 
@@ -545,7 +666,6 @@ namespace MyProject
             {
                 if (addProjectForm.ShowDialog() == DialogResult.OK && addProjectForm.IsSuccess)
                 {
-                    // Reload projects from API after adding new project
                     LoadProjectsFromApi();
                 }
             }
@@ -553,7 +673,6 @@ namespace MyProject
 
         private void UpdateStatistics()
         {
-            // If no projects, reset all stats to 0
             if (currentProjects == null || currentProjects.Count == 0)
             {
                 lblStat1Value.Text = "0";
@@ -562,22 +681,16 @@ namespace MyProject
                 return;
             }
 
-            // Count projects by status from API data
             int totalProjects = currentProjects.Count;
             int inProgressCount = currentProjects.Count(p => p.Status == "In Progress");
             int completedCount = currentProjects.Count(p => p.Status == "Completed");
 
-            // Update labels with real counts
             lblStat1Value.Text = totalProjects.ToString();
             lblStat2Value.Text = inProgressCount.ToString();
             lblStat3Value.Text = completedCount.ToString();
-            
-            // Debug output
-            System.Diagnostics.Debug.WriteLine($"Statistics Updated: Total={totalProjects}, In Progress={inProgressCount}, Completed={completedCount}");
         }
     }
 
-    // API Response classes for projects list
     public class ProjectsApiResponse
     {
         public string Message { get; set; }

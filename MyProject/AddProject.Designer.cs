@@ -2,15 +2,8 @@
 {
     partial class AddProject
     {
-        /// <summary>
-        /// Required designer variable.
-        /// </summary>
         private System.ComponentModel.IContainer components = null;
 
-        /// <summary>
-        /// Clean up any resources being used.
-        /// </summary>
-        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -22,10 +15,6 @@
 
         #region Windows Form Designer generated code
 
-        /// <summary>
-        /// Required method for Designer support - do not modify
-        /// the contents of this method with the code editor.
-        /// </summary>
         private void InitializeComponent()
         {
             lblTitle = new Label();
@@ -42,9 +31,7 @@
             panelMain = new Panel();
             panelMain.SuspendLayout();
             SuspendLayout();
-            // 
-            // lblTitle
-            // 
+            
             lblTitle.AutoSize = true;
             lblTitle.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
             lblTitle.ForeColor = Color.FromArgb(44, 62, 80);
@@ -53,9 +40,7 @@
             lblTitle.Size = new Size(188, 32);
             lblTitle.TabIndex = 0;
             lblTitle.Text = "Tạo Dự Án Mới";
-            // 
-            // lblProjectName
-            // 
+            
             lblProjectName.AutoSize = true;
             lblProjectName.Font = new Font("Segoe UI", 10F);
             lblProjectName.ForeColor = Color.FromArgb(44, 62, 80);
@@ -64,9 +49,7 @@
             lblProjectName.Size = new Size(73, 19);
             lblProjectName.TabIndex = 1;
             lblProjectName.Text = "Tên Dự Án";
-            // 
-            // txtProjectName
-            // 
+            
             txtProjectName.Font = new Font("Segoe UI", 11F);
             txtProjectName.ForeColor = Color.Gray;
             txtProjectName.Location = new Point(30, 115);
@@ -76,9 +59,7 @@
             txtProjectName.Text = "Ví dụ: Triển khai ứng dụng TaskScheduler";
             txtProjectName.Enter += txtProjectName_Enter;
             txtProjectName.Leave += txtProjectName_Leave;
-            // 
-            // lblDescription
-            // 
+            
             lblDescription.AutoSize = true;
             lblDescription.Font = new Font("Segoe UI", 10F);
             lblDescription.ForeColor = Color.FromArgb(44, 62, 80);
@@ -86,10 +67,8 @@
             lblDescription.Name = "lblDescription";
             lblDescription.Size = new Size(91, 19);
             lblDescription.TabIndex = 3;
-            lblDescription.Text = "Mô Tả Dự Án";
-            // 
-            // txtDescription
-            // 
+            lblDescription.Text = "Mô Tả Dự ÁN";
+            
             txtDescription.Font = new Font("Segoe UI", 10F);
             txtDescription.ForeColor = Color.Gray;
             txtDescription.Location = new Point(30, 190);
@@ -101,9 +80,7 @@
             txtDescription.Text = "Mô tả chi tiết về mục tiêu và phạm vi dự án.";
             txtDescription.Enter += txtDescription_Enter;
             txtDescription.Leave += txtDescription_Leave;
-            // 
-            // lblDeadline
-            // 
+            
             lblDeadline.AutoSize = true;
             lblDeadline.Font = new Font("Segoe UI", 10F);
             lblDeadline.ForeColor = Color.FromArgb(44, 62, 80);
@@ -112,9 +89,7 @@
             lblDeadline.Size = new Size(150, 19);
             lblDeadline.TabIndex = 5;
             lblDeadline.Text = "Ngày Kết Thúc Dự Kiến";
-            // 
-            // dtpDeadline
-            // 
+            
             dtpDeadline.CalendarFont = new Font("Segoe UI", 10F);
             dtpDeadline.Font = new Font("Segoe UI", 11F);
             dtpDeadline.Format = DateTimePickerFormat.Short;
@@ -122,9 +97,7 @@
             dtpDeadline.Name = "dtpDeadline";
             dtpDeadline.Size = new Size(460, 27);
             dtpDeadline.TabIndex = 6;
-            // 
-            // lblStatus
-            // 
+            
             lblStatus.AutoSize = true;
             lblStatus.Font = new Font("Segoe UI", 10F);
             lblStatus.ForeColor = Color.FromArgb(44, 62, 80);
@@ -133,20 +106,16 @@
             lblStatus.Size = new Size(128, 19);
             lblStatus.TabIndex = 7;
             lblStatus.Text = "Trạng Thái Ban Đầu";
-            // 
-            // cboStatus
-            // 
+            
             cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
             cboStatus.Font = new Font("Segoe UI", 11F);
             cboStatus.FormattingEnabled = true;
-            cboStatus.Items.AddRange(new object[] { "Đang Lập Kế Hoạch (Planning)", "Đang Tiến Hành (In Progress)", "Chờ Làm (To Do)", "Tạm Dừng (On Hold)", "Hoàn Thành (Completed)", "Đã Hủy (Cancelled)" });
+            cboStatus.Items.AddRange(new object[] { "Đang Tiến Hành (In Progress)", "Chờ Làm (To Do)", "Hoàn Thành (Completed)" });
             cboStatus.Location = new Point(30, 395);
             cboStatus.Name = "cboStatus";
             cboStatus.Size = new Size(460, 28);
             cboStatus.TabIndex = 8;
-            // 
-            // btnCancel
-            // 
+            
             btnCancel.BackColor = Color.White;
             btnCancel.FlatAppearance.BorderColor = Color.LightGray;
             btnCancel.FlatStyle = FlatStyle.Flat;
@@ -159,9 +128,7 @@
             btnCancel.Text = "Hủy";
             btnCancel.UseVisualStyleBackColor = false;
             btnCancel.Click += btnCancel_Click;
-            // 
-            // btnCreate
-            // 
+            
             btnCreate.BackColor = Color.FromArgb(88, 86, 214);
             btnCreate.FlatAppearance.BorderSize = 0;
             btnCreate.FlatStyle = FlatStyle.Flat;
@@ -174,9 +141,7 @@
             btnCreate.Text = "Tạo Dự Án";
             btnCreate.UseVisualStyleBackColor = false;
             btnCreate.Click += btnCreate_Click;
-            // 
-            // panelMain
-            // 
+            
             panelMain.BackColor = Color.White;
             panelMain.Controls.Add(lblTitle);
             panelMain.Controls.Add(btnCreate);
@@ -194,9 +159,7 @@
             panelMain.Name = "panelMain";
             panelMain.Size = new Size(520, 530);
             panelMain.TabIndex = 11;
-            // 
-            // AddProject
-            // 
+            
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.WhiteSmoke;
@@ -211,7 +174,6 @@
             panelMain.ResumeLayout(false);
             panelMain.PerformLayout();
             ResumeLayout(false);
-
         }
 
         #endregion

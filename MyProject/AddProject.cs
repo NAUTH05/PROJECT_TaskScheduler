@@ -222,6 +222,7 @@ namespace MyProject
                 "Đang Tiến Hành (In Progress)" => "In Progress",
                 "Chờ Làm (To Do)" => "To Do",
                 "Hoàn Thành (Completed)" => "Completed",
+                _ => "To Do"
             };
         }
 
@@ -249,4 +250,3 @@ namespace MyProject
         public string OwnerUserID { get; set; }
     }
 }
-//THUANNGUYEN

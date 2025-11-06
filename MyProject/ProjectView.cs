@@ -15,10 +15,9 @@ namespace MyProject
         private string projectId;
         private string currentUserId;
         private string currentUserName;
-        private bool isLoadingStatus = false; // Flag to prevent infinite loop
-        private bool hasChanges = false; // Track if any changes were made
+        private bool isLoadingStatus = false;
+        private bool hasChanges = false;
         
-        // Task data class matching API
         public class TaskItem
         {
             [System.Text.Json.Serialization.JsonPropertyName("TaskID")]
@@ -46,7 +45,6 @@ namespace MyProject
             public string AssignedToUserID { get; set; }
         }
 
-        // API Response classes
         public class TasksApiResponse
         {
             public string Message { get; set; }
@@ -71,33 +69,25 @@ namespace MyProject
             this.currentUserId = userId;
             this.currentUserName = userName;
             
-            // Set project info
             lblProjectName.Text = projectName;
             lblProjectDescription.Text = projectDescription;
             lblProjectDeadline.Text = $"Ngày kết thúc dự kiến: {endDate}";
             
-            // Set status without triggering event
             isLoadingStatus = true;
             cboProjectStatus.SelectedItem = status;
             isLoadingStatus = false;
             
-            // Set user info
             lblUserName.Text = $"Chào mừng, {userName}";
             lblUserAvatar.Text = GetInitials(userName);
             
-            // Style components
             InitializeStyles();
-            
-            // Load tasks from API
             LoadTasksFromApi();
             
-            // Add FormClosed event to notify parent form
             this.FormClosed += ProjectView_FormClosed;
         }
 
         private void ProjectView_FormClosed(object sender, FormClosedEventArgs e)
         {
-            // Only set DialogResult.OK if changes were made
             if (hasChanges)
             {
                 this.DialogResult = DialogResult.OK;
@@ -110,7 +100,6 @@ namespace MyProject
 
         private void InitializeStyles()
         {
-            // Round corners for user avatar
             lblUserAvatar.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -120,7 +109,6 @@ namespace MyProject
                 }
             };
 
-            // Round corners for project info panel
             panelProjectInfo.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -130,7 +118,6 @@ namespace MyProject
                 }
             };
 
-            // Round corners for add task button
             btnAddTask.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -140,7 +127,6 @@ namespace MyProject
                 }
             };
 
-            // Round corners for task panels
             panelToDo.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -168,7 +154,6 @@ namespace MyProject
                 }
             };
 
-            // Style status dropdown
             if (!string.IsNullOrEmpty(cboProjectStatus.Text))
             {
                 cboProjectStatus.BackColor = GetStatusBackgroundColor(cboProjectStatus.Text);
@@ -228,7 +213,6 @@ namespace MyProject
             {
                 using (HttpClient client = new HttpClient())
                 {
-                    // GET tasks by ProjectID
                     var response = await client.GetAsync($"https://nauth.fitlhu.com/api/tasks?ProjectID={projectId}");
                     var responseContent = await response.Content.ReadAsStringAsync();
 
@@ -239,7 +223,6 @@ namespace MyProject
                             PropertyNameCaseInsensitive = true
                         });
 
-                        // Clear existing tasks
                         flowToDoTasks.Controls.Clear();
                         flowInProgressTasks.Controls.Clear();
                         flowDoneTasks.Controls.Clear();
@@ -266,7 +249,6 @@ namespace MyProject
                         }
                         else
                         {
-                            // Show empty state
                             ShowEmptyTasksState();
                         }
                     }
@@ -313,10 +295,9 @@ namespace MyProject
                 Margin = new Padding(5),
                 Padding = new Padding(10),
                 Cursor = Cursors.Hand,
-                Tag = task // Store task object
+                Tag = task
             };
 
-            // Create context menu for changing status
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("📋 Chuyển sang To Do", null, async (s, e) => await ChangeTaskStatus(task, card, "To Do"));
             contextMenu.Items.Add("⏳ Chuyển sang In Progress", null, async (s, e) => await ChangeTaskStatus(task, card, "In Progress"));
@@ -326,7 +307,6 @@ namespace MyProject
             
             card.ContextMenuStrip = contextMenu;
 
-            // Task name
             var lblTaskName = new Label
             {
                 Text = task.TaskName,
@@ -338,7 +318,6 @@ namespace MyProject
                 ContextMenuStrip = contextMenu
             };
 
-            // Due date
             DateTime dueDate;
             DateTime.TryParse(task.DueDate, out dueDate);
             var lblDueDate = new Label
@@ -351,7 +330,6 @@ namespace MyProject
                 ContextMenuStrip = contextMenu
             };
 
-            // Priority badge
             var lblPriority = new Label
             {
                 Text = task.Priority,
@@ -363,7 +341,6 @@ namespace MyProject
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            // Round priority badge
             lblPriority.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -373,7 +350,6 @@ namespace MyProject
                 }
             };
 
-            // User initials (if assigned)
             var lblUserInitials = new Label
             {
                 Text = string.IsNullOrEmpty(task.AssignedToUserID) ? "?" : GetInitials(currentUserName),
@@ -385,7 +361,6 @@ namespace MyProject
                 TextAlign = ContentAlignment.MiddleCenter
             };
 
-            // Round user initials
             lblUserInitials.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -395,7 +370,6 @@ namespace MyProject
                 }
             };
 
-            // Change status button (instead of delete)
             var btnChangeStatus = new Button
             {
                 Text = "⋮",
@@ -410,7 +384,6 @@ namespace MyProject
             btnChangeStatus.FlatAppearance.BorderSize = 0;
             btnChangeStatus.Click += (s, e) => contextMenu.Show(btnChangeStatus, new Point(0, btnChangeStatus.Height));
 
-            // Round card
             card.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -422,7 +395,6 @@ namespace MyProject
 
             card.Controls.AddRange(new Control[] { lblTaskName, lblDueDate, lblPriority, lblUserInitials, btnChangeStatus });
 
-            // Click event to view task details
             card.Click += (s, e) => ShowTaskDetails(task);
             lblTaskName.Click += (s, e) => ShowTaskDetails(task);
             lblDueDate.Click += (s, e) => ShowTaskDetails(task);
@@ -446,13 +418,9 @@ namespace MyProject
                     
                     if (response.IsSuccessStatusCode)
                     {
-                        // Mark that changes were made (tasks changed)
                         hasChanges = true;
-                        
-                        // Update task object
                         task.Status = newStatus;
                         
-                        // Move card to appropriate column
                         var currentParent = taskCard.Parent as FlowLayoutPanel;
                         currentParent?.Controls.Remove(taskCard);
 
@@ -467,7 +435,6 @@ namespace MyProject
                         targetFlow.Controls.Add(taskCard);
                         taskCard.Enabled = true;
 
-                        // Show success toast (optional)
                         this.Text = $"✓ Đã chuyển sang {newStatus}";
                         await System.Threading.Tasks.Task.Delay(2000);
                         this.Text = "Chi Tiết Dự Án";
@@ -523,10 +490,8 @@ namespace MyProject
 
                         if (response.IsSuccessStatusCode)
                         {
-                            // Mark that changes were made (task deleted)
                             hasChanges = true;
                             
-                            // Remove from UI
                             var parentFlow = taskCard.Parent as FlowLayoutPanel;
                             parentFlow?.Controls.Remove(taskCard);
                             taskCard.Dispose();
@@ -558,52 +523,37 @@ namespace MyProject
 
         private void btnAddTask_Click(object sender, EventArgs e)
         {
-            // Open TaskForm to add new task
             var taskForm = new TaskForm(projectId, currentUserId);
             if (taskForm.ShowDialog() == DialogResult.OK)
             {
-                // Mark that changes were made (new task added)
                 hasChanges = true;
-                
-                // Reload tasks after adding
                 LoadTasksFromApi();
             }
         }
 
         private async void cboProjectStatus_SelectedIndexChanged(object sender, EventArgs e)
         {
-            // Prevent infinite loop when loading
             if (isLoadingStatus) return;
 
             if (cboProjectStatus.SelectedItem != null)
             {
                 string newStatus = cboProjectStatus.SelectedItem.ToString();
-                
-                // Update status color
                 cboProjectStatus.BackColor = GetStatusBackgroundColor(newStatus);
                 
                 try
                 {
                     using (HttpClient client = new HttpClient())
                     {
-                        // IMPORTANT: Use ProjectID field name matching API
                         var updateData = new { Status = newStatus };
                         var json = JsonSerializer.Serialize(updateData);
                         var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                        // Use projectId variable (which contains the ProjectID value from constructor)
-                        System.Diagnostics.Debug.WriteLine($"Updating project: {projectId} with status: {newStatus}");
                         
                         var response = await client.PutAsync($"https://nauth.fitlhu.com/api/projects/{projectId}", content);
                         var responseContent = await response.Content.ReadAsStringAsync();
                         
-                        System.Diagnostics.Debug.WriteLine($"Response: {responseContent}");
-                        
                         if (response.IsSuccessStatusCode)
                         {
-                            // Mark that changes were made
                             hasChanges = true;
-                            
                             MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}", 
                                 "Cập Nhật Thành Công", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }
