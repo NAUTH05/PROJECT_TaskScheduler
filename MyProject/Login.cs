@@ -11,6 +11,27 @@ namespace MyProject
             InitializeComponent();
             txtUsernameOrEmail.KeyDown += TextBox_KeyDown;
             txtPassword.KeyDown += TextBox_KeyDown;
+            
+            LoadSavedToken();
+        }
+
+        private void LoadSavedToken()
+        {
+            if (AuthManager.LoadToken())
+            {
+                var mainForm = new MainForm(AuthManager.UserName, AuthManager.UserId);
+                this.Hide();
+                
+                mainForm.FormClosed += (s, args) =>
+                {
+                    this.Show();
+                    txtUsernameOrEmail.Clear();
+                    txtPassword.Clear();
+                    txtUsernameOrEmail.Focus();
+                };
+                
+                mainForm.Show();
+            }
         }
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
@@ -54,8 +75,6 @@ namespace MyProject
                 return;
             }
 
-            HttpClient client = new HttpClient();
-            
             try
             {
                 var userInput = txtUsernameOrEmail.Text.Trim();
@@ -78,10 +97,7 @@ namespace MyProject
                     };
                 }
 
-                var json = JsonSerializer.Serialize(loginData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://nauth.fitlhu.com/api/login", content);
+                var response = await ApiHelper.PostAsync("login", loginData);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
@@ -90,15 +106,18 @@ namespace MyProject
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    var result = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+                    var result = JsonSerializer.Deserialize<LoginResponse>(responseContent, options);
+
+                    AuthManager.Token = result?.Token;
+                    AuthManager.UserId = result?.Data?._id;
+                    AuthManager.UserName = result?.Data?.UserName ?? result?.Data?.Email;
+                    AuthManager.Email = result?.Data?.Email;
+                    AuthManager.SaveToken();
 
                     string welcomeName = result?.Data?.UserName ?? result?.Data?.Email;
                     MessageBox.Show($"Đăng nhập thành công!\nChào mừng {welcomeName}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    string userName = result?.Data?.UserName ?? result?.Data?.Email ?? "User";
-                    string userId = result?.Data?._id ?? "";
-                    
-                    var mainForm = new MainForm(userName, userId);
+                    var mainForm = new MainForm(AuthManager.UserName, AuthManager.UserId);
                     this.Hide();
 
                     mainForm.FormClosed += (s, args) =>
@@ -117,7 +136,7 @@ namespace MyProject
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    var errorResult = JsonSerializer.Deserialize<ApiResponse>(responseContent, options);
+                    var errorResult = JsonSerializer.Deserialize<LoginResponse>(responseContent, options);
 
                     MessageBox.Show($"Đăng nhập thất bại!\n{errorResult?.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
@@ -129,10 +148,6 @@ namespace MyProject
             catch (Exception ex)
             {
                 MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                client.Dispose();
             }
         }
 
@@ -155,9 +170,10 @@ namespace MyProject
         }
     }
 
-    public class ApiResponse
+    public class LoginResponse
     {
         public string Message { get; set; }
+        public string Token { get; set; }
         public UserData Data { get; set; }
     }
 

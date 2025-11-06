@@ -138,7 +138,7 @@
             cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
             cboStatus.Font = new Font("Segoe UI", 11F);
             cboStatus.FormattingEnabled = true;
-            cboStatus.Items.AddRange(new object[] { "To Do", "In Progress", "Done", "Blocked" });
+            cboStatus.Items.AddRange(new object[] { "To Do", "In Progress", "Done" });
             cboStatus.Location = new Point(290, 415);
             cboStatus.Name = "cboStatus";
             cboStatus.Size = new Size(220, 28);

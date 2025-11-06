@@ -230,7 +230,7 @@
             panelProjects.Location = new Point(0, 230);
             panelProjects.Name = "panelProjects";
             panelProjects.Padding = new Padding(30, 20, 30, 20);
-            panelProjects.Size = new Size(1201, 303);
+            panelProjects.Size = new Size(1201, 405);
             panelProjects.TabIndex = 2;
             // 
             // btnAddProject
@@ -268,7 +268,7 @@
             panelProjectsList.Location = new Point(30, 66);
             panelProjectsList.Name = "panelProjectsList";
             panelProjectsList.Padding = new Padding(10);
-            panelProjectsList.Size = new Size(1141, 217);
+            panelProjectsList.Size = new Size(1141, 319);
             panelProjectsList.TabIndex = 0;
             // 
             // panelTasks
@@ -277,10 +277,10 @@
             panelTasks.Controls.Add(lblTasksTitle);
             panelTasks.Controls.Add(panelTaskColumns);
             panelTasks.Dock = DockStyle.Fill;
-            panelTasks.Location = new Point(0, 533);
+            panelTasks.Location = new Point(0, 635);
             panelTasks.Name = "panelTasks";
             panelTasks.Padding = new Padding(30, 20, 30, 30);
-            panelTasks.Size = new Size(1201, 345);
+            panelTasks.Size = new Size(1201, 352);
             panelTasks.TabIndex = 3;
             // 
             // lblTasksTitle
@@ -300,7 +300,7 @@
             panelTaskColumns.Controls.Add(panelInProgress);
             panelTaskColumns.Controls.Add(panelToDo);
             panelTaskColumns.Dock = DockStyle.Bottom;
-            panelTaskColumns.Location = new Point(30, 65);
+            panelTaskColumns.Location = new Point(30, 72);
             panelTaskColumns.Name = "panelTaskColumns";
             panelTaskColumns.Size = new Size(1141, 250);
             panelTaskColumns.TabIndex = 0;
@@ -373,7 +373,7 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.WhiteSmoke;
-            ClientSize = new Size(1201, 878);
+            ClientSize = new Size(1201, 987);
             Controls.Add(panelTasks);
             Controls.Add(panelProjects);
             Controls.Add(panelStats);

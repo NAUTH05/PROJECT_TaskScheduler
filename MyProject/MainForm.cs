@@ -51,6 +51,9 @@ namespace MyProject
                 }
             };
 
+            lblUserName.Click += LblUserName_Click;
+            lblUserName.Cursor = Cursors.Hand;
+
             SetRoundedCorners(panelStat1, 10);
             SetRoundedCorners(panelStat2, 10);
             SetRoundedCorners(panelStat3, 10);
@@ -82,6 +85,18 @@ namespace MyProject
             UpdateRecentProjectsDisplay();
         }
 
+        private void LblUserName_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show("Bạn có muốn đăng xuất?", "Đăng xuất", 
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            
+            if (result == DialogResult.Yes)
+            {
+                AuthManager.Logout();
+                this.Close();
+            }
+        }
+
         private async void LoadProjectsFromApi()
         {
             if (string.IsNullOrEmpty(currentUserId))
@@ -92,56 +107,63 @@ namespace MyProject
 
             try
             {
-                using (HttpClient client = new HttpClient())
+                var response = await ApiHelper.GetAsync($"projects?OwnerUserID={currentUserId}");
+                
+                if (ApiHelper.IsUnauthorized(response))
                 {
-                    var response = await client.GetAsync($"https://nauth.fitlhu.com/api/projects?OwnerUserID={currentUserId}");
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonSerializer.Deserialize<ProjectsApiResponse>(responseContent, new JsonSerializerOptions
                     {
-                        var result = JsonSerializer.Deserialize<ProjectsApiResponse>(responseContent, new JsonSerializerOptions
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    flowProjectsList.Controls.Clear();
+                    currentProjects.Clear();
+
+                    if (result?.Data != null && result.Data.Count > 0)
+                    {
+                        currentProjects = result.Data;
+                        
+                        foreach (var project in result.Data)
                         {
-                            PropertyNameCaseInsensitive = true
-                        });
+                            DateTime endDate;
+                            DateTime.TryParse(project.EndDate, out endDate);
 
-                        flowProjectsList.Controls.Clear();
-                        currentProjects.Clear();
+                            int progress = CalculateProgress(project.Status);
 
-                        if (result?.Data != null && result.Data.Count > 0)
-                        {
-                            currentProjects = result.Data;
-                            
-                            foreach (var project in result.Data)
-                            {
-                                DateTime endDate;
-                                DateTime.TryParse(project.EndDate, out endDate);
-
-                                int progress = CalculateProgress(project.Status);
-
-                                AddProjectItem(
-                                    project.ProjectName,
-                                    endDate.ToString("dd/MM/yyyy"),
-                                    progress,
-                                    project.Status,
-                                    new[] { GetInitials(currentUserName) },
-                                    project.ProjectID
-                                );
-                            }
-
-                            UpdateStatistics();
+                            AddProjectItem(
+                                project.ProjectName,
+                                endDate.ToString("dd/MM/yyyy"),
+                                progress,
+                                project.Status,
+                                new[] { GetInitials(currentUserName) },
+                                project.ProjectID
+                            );
                         }
-                        else
-                        {
-                            ShowEmptyState();
-                            UpdateStatistics();
-                        }
+
+                        UpdateStatistics();
                     }
                     else
                     {
-                        MessageBox.Show($"Không thể tải danh sách dự án.\nMã lỗi: {response.StatusCode}", 
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        LoadSampleProjects();
+                        ShowEmptyState();
+                        UpdateStatistics();
                     }
+                }
+                else
+                {
+                    MessageBox.Show($"Không thể tải danh sách dự án.\nMã lỗi: {response.StatusCode}", 
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    LoadSampleProjects();
                 }
             }
             catch (HttpRequestException ex)
@@ -590,42 +612,49 @@ namespace MyProject
             {
                 projectPanel.Enabled = false;
 
-                using (HttpClient client = new HttpClient())
+                var response = await ApiHelper.DeleteAsync($"projects/{projectId}");
+                
+                if (ApiHelper.IsUnauthorized(response))
                 {
-                    var response = await client.DeleteAsync($"https://nauth.fitlhu.com/api/projects/{projectId}");
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
+                {
+                    currentProjects.RemoveAll(p => p.ProjectID == projectId);
+                    recentProjects.RemoveAll(p => p.ProjectID == projectId);
+                    
+                    flowProjectsList.Controls.Remove(projectPanel);
+                    projectPanel.Dispose();
+
+                    UpdateStatistics();
+                    UpdateRecentProjectsDisplay();
+
+                    if (flowProjectsList.Controls.Count == 0)
                     {
-                        currentProjects.RemoveAll(p => p.ProjectID == projectId);
-                        recentProjects.RemoveAll(p => p.ProjectID == projectId);
-                        
-                        flowProjectsList.Controls.Remove(projectPanel);
-                        projectPanel.Dispose();
-
-                        UpdateStatistics();
-                        UpdateRecentProjectsDisplay();
-
-                        if (flowProjectsList.Controls.Count == 0)
-                        {
-                            ShowEmptyState();
-                        }
-
-                        MessageBox.Show("Xóa dự án thành công!", "Thành công",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        ShowEmptyState();
                     }
-                    else
+
+                    MessageBox.Show("Xóa dự án thành công!", "Thành công",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    var errorResult = JsonSerializer.Deserialize<ProjectsApiResponse>(responseContent, new JsonSerializerOptions
                     {
-                        var errorResult = JsonSerializer.Deserialize<ProjectsApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        PropertyNameCaseInsensitive = true
+                    });
 
-                        MessageBox.Show($"Xóa dự án thất bại!\n{errorResult?.Message ?? responseContent}",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show($"Xóa dự án thất bại!\n{errorResult?.Message ?? responseContent}",
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
 
-                        projectPanel.Enabled = true;
-                    }
+                    projectPanel.Enabled = true;
                 }
             }
             catch (HttpRequestException ex)

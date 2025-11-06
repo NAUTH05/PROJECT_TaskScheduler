@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Windows.Forms;
@@ -116,8 +115,6 @@ namespace MyProject
             btnCancel.Enabled = false;
             btnCreate.Text = "Đang tạo...";
 
-            HttpClient client = new HttpClient();
-            
             try
             {
                 var taskData = new
@@ -131,10 +128,17 @@ namespace MyProject
                     AssignedToUserID = currentUserId
                 };
 
-                var json = JsonSerializer.Serialize(taskData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://nauth.fitlhu.com/api/tasks", content);
+                var response = await ApiHelper.PostAsync("tasks", taskData);
+                
+                if (ApiHelper.IsUnauthorized(response))
+                {
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
@@ -175,7 +179,6 @@ namespace MyProject
             }
             finally
             {
-                client.Dispose();
                 btnCreate.Enabled = true;
                 btnCancel.Enabled = true;
                 btnCreate.Text = "Tạo Nhiệm Vụ";

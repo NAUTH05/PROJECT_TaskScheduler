@@ -137,8 +137,6 @@ namespace MyProject
             btnCreate.Enabled = false;
             btnCancel.Enabled = false;
             btnCreate.Text = "Đang tạo...";
-
-            HttpClient client = new HttpClient();
             
             try
             {
@@ -154,10 +152,17 @@ namespace MyProject
                     OwnerUserID = currentUserId
                 };
 
-                var json = JsonSerializer.Serialize(projectData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://nauth.fitlhu.com/api/projects", content);
+                var response = await ApiHelper.PostAsync("projects", projectData);
+                
+                if (ApiHelper.IsUnauthorized(response))
+                {
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
@@ -208,7 +213,6 @@ namespace MyProject
             }
             finally
             {
-                client.Dispose();
                 btnCreate.Enabled = true;
                 btnCancel.Enabled = true;
                 btnCreate.Text = "Tạo Dự Án";

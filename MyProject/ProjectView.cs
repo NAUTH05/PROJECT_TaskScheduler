@@ -211,52 +211,59 @@ namespace MyProject
         {
             try
             {
-                using (HttpClient client = new HttpClient())
+                var response = await ApiHelper.GetAsync($"tasks?ProjectID={projectId}");
+                
+                if (ApiHelper.IsUnauthorized(response))
                 {
-                    var response = await client.GetAsync($"https://nauth.fitlhu.com/api/tasks?ProjectID={projectId}");
-                    var responseContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
+                var responseContent = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = JsonSerializer.Deserialize<TasksApiResponse>(responseContent, new JsonSerializerOptions
                     {
-                        var result = JsonSerializer.Deserialize<TasksApiResponse>(responseContent, new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                        PropertyNameCaseInsensitive = true
+                    });
 
-                        flowToDoTasks.Controls.Clear();
-                        flowInProgressTasks.Controls.Clear();
-                        flowDoneTasks.Controls.Clear();
+                    flowToDoTasks.Controls.Clear();
+                    flowInProgressTasks.Controls.Clear();
+                    flowDoneTasks.Controls.Clear();
 
-                        if (result?.Data != null && result.Data.Count > 0)
+                    if (result?.Data != null && result.Data.Count > 0)
+                    {
+                        foreach (var task in result.Data)
                         {
-                            foreach (var task in result.Data)
+                            var taskCard = CreateTaskCard(task);
+                            
+                            switch (task.Status)
                             {
-                                var taskCard = CreateTaskCard(task);
-                                
-                                switch (task.Status)
-                                {
-                                    case "To Do":
-                                        flowToDoTasks.Controls.Add(taskCard);
-                                        break;
-                                    case "In Progress":
-                                        flowInProgressTasks.Controls.Add(taskCard);
-                                        break;
-                                    case "Done":
-                                        flowDoneTasks.Controls.Add(taskCard);
-                                        break;
-                                }
+                                case "To Do":
+                                    flowToDoTasks.Controls.Add(taskCard);
+                                    break;
+                                case "In Progress":
+                                    flowInProgressTasks.Controls.Add(taskCard);
+                                    break;
+                                case "Done":
+                                    flowDoneTasks.Controls.Add(taskCard);
+                                    break;
                             }
-                        }
-                        else
-                        {
-                            ShowEmptyTasksState();
                         }
                     }
                     else
                     {
-                        MessageBox.Show($"Không thể tải danh sách nhiệm vụ.\nMã lỗi: {response.StatusCode}", 
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        ShowEmptyTasksState();
                     }
+                }
+                else
+                {
+                    MessageBox.Show($"Không thể tải danh sách nhiệm vụ.\nMã lỗi: {response.StatusCode}", 
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (HttpRequestException ex)
@@ -408,43 +415,46 @@ namespace MyProject
             {
                 taskCard.Enabled = false;
 
-                using (HttpClient client = new HttpClient())
+                var updateData = new { Status = newStatus };
+                var response = await ApiHelper.PutAsync($"tasks/{task.TaskID}", updateData);
+                
+                if (ApiHelper.IsUnauthorized(response))
                 {
-                    var updateData = new { Status = newStatus };
-                    var json = JsonSerializer.Serialize(updateData);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                    var response = await client.PutAsync($"https://nauth.fitlhu.com/api/tasks/{task.TaskID}", content);
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    hasChanges = true;
+                    task.Status = newStatus;
                     
-                    if (response.IsSuccessStatusCode)
+                    var currentParent = taskCard.Parent as FlowLayoutPanel;
+                    currentParent?.Controls.Remove(taskCard);
+
+                    FlowLayoutPanel targetFlow = newStatus switch
                     {
-                        hasChanges = true;
-                        task.Status = newStatus;
-                        
-                        var currentParent = taskCard.Parent as FlowLayoutPanel;
-                        currentParent?.Controls.Remove(taskCard);
+                        "To Do" => flowToDoTasks,
+                        "In Progress" => flowInProgressTasks,
+                        "Done" => flowDoneTasks,
+                        _ => flowToDoTasks
+                    };
 
-                        FlowLayoutPanel targetFlow = newStatus switch
-                        {
-                            "To Do" => flowToDoTasks,
-                            "In Progress" => flowInProgressTasks,
-                            "Done" => flowDoneTasks,
-                            _ => flowToDoTasks
-                        };
+                    targetFlow.Controls.Add(taskCard);
+                    taskCard.Enabled = true;
 
-                        targetFlow.Controls.Add(taskCard);
-                        taskCard.Enabled = true;
-
-                        this.Text = $"✓ Đã chuyển sang {newStatus}";
-                        await System.Threading.Tasks.Task.Delay(2000);
-                        this.Text = "Chi Tiết Dự Án";
-                    }
-                    else
-                    {
-                        MessageBox.Show("Không thể cập nhật trạng thái nhiệm vụ.", 
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        taskCard.Enabled = true;
-                    }
+                    this.Text = $"✓ Đã chuyển sang {newStatus}";
+                    await System.Threading.Tasks.Task.Delay(2000);
+                    this.Text = "Chi Tiết Dự Án";
+                }
+                else
+                {
+                    MessageBox.Show("Không thể cập nhật trạng thái nhiệm vụ.", 
+                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    taskCard.Enabled = true;
                 }
             }
             catch (Exception ex)
@@ -483,28 +493,35 @@ namespace MyProject
                 {
                     taskCard.Enabled = false;
 
-                    using (HttpClient client = new HttpClient())
+                    var response = await ApiHelper.DeleteAsync($"tasks/{taskId}");
+                    
+                    if (ApiHelper.IsUnauthorized(response))
                     {
-                        var response = await client.DeleteAsync($"https://nauth.fitlhu.com/api/tasks/{taskId}");
-                        var responseContent = await response.Content.ReadAsStringAsync();
+                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                            "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        AuthManager.Logout();
+                        this.Close();
+                        return;
+                    }
+                    
+                    var responseContent = await response.Content.ReadAsStringAsync();
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            hasChanges = true;
-                            
-                            var parentFlow = taskCard.Parent as FlowLayoutPanel;
-                            parentFlow?.Controls.Remove(taskCard);
-                            taskCard.Dispose();
+                    if (response.IsSuccessStatusCode)
+                    {
+                        hasChanges = true;
+                        
+                        var parentFlow = taskCard.Parent as FlowLayoutPanel;
+                        parentFlow?.Controls.Remove(taskCard);
+                        taskCard.Dispose();
 
-                            MessageBox.Show("Xóa nhiệm vụ thành công!", "Thành công",
-                                MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        else
-                        {
-                            MessageBox.Show($"Xóa nhiệm vụ thất bại!\n{responseContent}",
-                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            taskCard.Enabled = true;
-                        }
+                        MessageBox.Show("Xóa nhiệm vụ thành công!", "Thành công",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Xóa nhiệm vụ thất bại!\n{responseContent}",
+                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        taskCard.Enabled = true;
                     }
                 }
                 catch (Exception ex)
@@ -542,26 +559,30 @@ namespace MyProject
                 
                 try
                 {
-                    using (HttpClient client = new HttpClient())
+                    var updateData = new { Status = newStatus };
+                    var response = await ApiHelper.PutAsync($"projects/{projectId}", updateData);
+                    
+                    if (ApiHelper.IsUnauthorized(response))
                     {
-                        var updateData = new { Status = newStatus };
-                        var json = JsonSerializer.Serialize(updateData);
-                        var content = new StringContent(json, Encoding.UTF8, "application/json");
-                        
-                        var response = await client.PutAsync($"https://nauth.fitlhu.com/api/projects/{projectId}", content);
-                        var responseContent = await response.Content.ReadAsStringAsync();
-                        
-                        if (response.IsSuccessStatusCode)
-                        {
-                            hasChanges = true;
-                            MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}", 
-                                "Cập Nhật Thành Công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                        }
-                        else
-                        {
-                            MessageBox.Show($"Không thể cập nhật trạng thái dự án.\nResponse: {responseContent}", 
-                                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        }
+                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                            "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        AuthManager.Logout();
+                        this.Close();
+                        return;
+                    }
+                    
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    
+                    if (response.IsSuccessStatusCode)
+                    {
+                        hasChanges = true;
+                        MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}", 
+                            "Cập Nhật Thành Công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Không thể cập nhật trạng thái dự án.\nResponse: {responseContent}", 
+                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 catch (Exception ex)

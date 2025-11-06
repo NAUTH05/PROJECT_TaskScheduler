@@ -77,8 +77,6 @@ namespace MyProject
                 txtPassword.Focus();
                 return;
             }
-
-            HttpClient client = new HttpClient();
             
             try
             {
@@ -89,10 +87,7 @@ namespace MyProject
                     password = txtPassword.Text
                 };
 
-                var json = JsonSerializer.Serialize(registerData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await client.PostAsync("https://nauth.fitlhu.com/api/register", content);
+                var response = await ApiHelper.PostAsync("register", registerData);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
@@ -103,7 +98,13 @@ namespace MyProject
                     };
                     var result = JsonSerializer.Deserialize<RegisterApiResponse>(responseContent, options);
 
-                    MessageBox.Show($"Đăng ký thành công!\n{result?.Message}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    AuthManager.Token = result?.Token;
+                    AuthManager.UserId = result?.Data?._id;
+                    AuthManager.UserName = result?.Data?.UserName;
+                    AuthManager.Email = result?.Data?.Email;
+                    AuthManager.SaveToken();
+
+                    MessageBox.Show($"Đăng ký thành công!\n{result?.Message}\n\nBạn có thể đăng nhập ngay bây giờ.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                     this.DialogResult = DialogResult.OK;
                     this.Close();
@@ -127,10 +128,6 @@ namespace MyProject
             {
                 MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            finally
-            {
-                client.Dispose();
-            }
         }
 
         private void btnBackToLogin_Click(object sender, EventArgs e)
@@ -148,6 +145,7 @@ namespace MyProject
     public class RegisterApiResponse
     {
         public string Message { get; set; }
+        public string Token { get; set; }
         public RegisterUserData Data { get; set; }
     }
 
