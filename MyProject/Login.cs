@@ -11,27 +11,6 @@ namespace MyProject
             InitializeComponent();
             txtUsernameOrEmail.KeyDown += TextBox_KeyDown;
             txtPassword.KeyDown += TextBox_KeyDown;
-            
-            LoadSavedToken();
-        }
-
-        private void LoadSavedToken()
-        {
-            if (AuthManager.LoadToken())
-            {
-                var mainForm = new MainForm(AuthManager.UserName, AuthManager.UserId);
-                this.Hide();
-                
-                mainForm.FormClosed += (s, args) =>
-                {
-                    this.Show();
-                    txtUsernameOrEmail.Clear();
-                    txtPassword.Clear();
-                    txtUsernameOrEmail.Focus();
-                };
-                
-                mainForm.Show();
-            }
         }
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
@@ -117,18 +96,8 @@ namespace MyProject
                     string welcomeName = result?.Data?.UserName ?? result?.Data?.Email;
                     MessageBox.Show($"Đăng nhập thành công!\nChào mừng {welcomeName}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    var mainForm = new MainForm(AuthManager.UserName, AuthManager.UserId);
-                    this.Hide();
-
-                    mainForm.FormClosed += (s, args) =>
-                    {
-                        this.Show();
-                        txtUsernameOrEmail.Clear();
-                        txtPassword.Clear();
-                        txtUsernameOrEmail.Focus();
-                    };
-                    
-                    mainForm.Show();
+                    this.DialogResult = DialogResult.OK;
+                    this.Close();
                 }
                 else
                 {

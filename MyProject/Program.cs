@@ -2,16 +2,42 @@ namespace MyProject
 {
     internal static class Program
     {
-        /// <summary>
-        ///  The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main()
         {
-            // To customize application configuration such as set high DPI settings or default font,
-            // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            Application.Run(new Login());
+            
+            while (true)
+            {
+                if (AuthManager.LoadToken())
+                {
+                    var mainForm = new MainForm(AuthManager.UserName, AuthManager.UserId);
+                    Application.Run(mainForm);
+                    
+                    if (!AuthManager.IsLoggedIn())
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    var loginForm = new Login();
+                    var result = loginForm.ShowDialog();
+                    
+                    if (result == DialogResult.OK)
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
         }
     }
 }
