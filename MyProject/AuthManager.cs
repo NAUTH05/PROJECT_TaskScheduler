@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 
 namespace MyProject
@@ -10,7 +10,11 @@ namespace MyProject
         public static string UserName { get; set; }
         public static string Email { get; set; }
 
-        private static readonly string TokenFilePath = "token.dat";
+        private static readonly string AppDataFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            "TaskScheduler"
+        );
+        private static readonly string TokenFilePath = Path.Combine(AppDataFolder, "token.dat");
 
         public static bool IsLoggedIn()
         {
@@ -36,6 +40,11 @@ namespace MyProject
             {
                 if (!string.IsNullOrEmpty(Token))
                 {
+                    if (!Directory.Exists(AppDataFolder))
+                    {
+                        Directory.CreateDirectory(AppDataFolder);
+                    }
+
                     var data = $"{Token}|{UserId}|{UserName}|{Email}";
                     File.WriteAllText(TokenFilePath, data);
                 }
@@ -69,6 +78,11 @@ namespace MyProject
             }
             
             return false;
+        }
+
+        public static string GetTokenFilePath()
+        {
+            return TokenFilePath;
         }
     }
 }

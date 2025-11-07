@@ -10,7 +10,7 @@ namespace MyProject
     public static class ApiHelper
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string BaseUrl = "http://localhost:3300/api";
+        private const string BaseUrl = "https://nauth.fitlhu.com/api";
 
         public static async Task<HttpResponseMessage> GetAsync(string endpoint)
         {

@@ -17,30 +17,30 @@ namespace MyProject
         private string currentUserName;
         private bool isLoadingStatus = false;
         private bool hasChanges = false;
-        
+
         public class TaskItem
         {
             [System.Text.Json.Serialization.JsonPropertyName("TaskID")]
             public string TaskID { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("ProjectID")]
             public string ProjectID { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("TaskName")]
             public string TaskName { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("TaskDescription")]
             public string TaskDescription { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("DueDate")]
             public string DueDate { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("Priority")]
             public string Priority { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("Status")]
             public string Status { get; set; }
-            
+
             [System.Text.Json.Serialization.JsonPropertyName("AssignedToUserID")]
             public string AssignedToUserID { get; set; }
         }
@@ -60,29 +60,29 @@ namespace MyProject
             public TaskItem Data { get; set; }
         }
 
-        public ProjectView(string projectId, string projectName, string projectDescription, 
+        public ProjectView(string projectId, string projectName, string projectDescription,
                           string endDate, string status, string userId, string userName)
         {
             InitializeComponent();
-            
+
             this.projectId = projectId;
             this.currentUserId = userId;
             this.currentUserName = userName;
-            
+
             lblProjectName.Text = projectName;
             lblProjectDescription.Text = projectDescription;
             lblProjectDeadline.Text = $"Ngày kết thúc dự kiến: {endDate}";
-            
+
             isLoadingStatus = true;
             cboProjectStatus.SelectedItem = status;
             isLoadingStatus = false;
-            
+
             lblUserName.Text = $"Chào mừng, {userName}";
             lblUserAvatar.Text = GetInitials(userName);
-            
+
             InitializeStyles();
             LoadTasksFromApi();
-            
+
             this.FormClosed += ProjectView_FormClosed;
         }
 
@@ -189,9 +189,7 @@ namespace MyProject
                 "Planning" => Color.FromArgb(155, 89, 182),
                 "To Do" => Color.FromArgb(231, 76, 60),
                 "In Progress" => Color.FromArgb(241, 196, 15),
-                "On Hold" => Color.FromArgb(243, 156, 18),
                 "Completed" => Color.FromArgb(46, 204, 113),
-                "Cancelled" => Color.FromArgb(149, 165, 166),
                 _ => Color.Gray
             };
         }
@@ -212,16 +210,16 @@ namespace MyProject
             try
             {
                 var response = await ApiHelper.GetAsync($"tasks?ProjectID={projectId}");
-                
+
                 if (ApiHelper.IsUnauthorized(response))
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                         "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     AuthManager.Logout();
                     this.Close();
                     return;
                 }
-                
+
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
@@ -240,7 +238,7 @@ namespace MyProject
                         foreach (var task in result.Data)
                         {
                             var taskCard = CreateTaskCard(task);
-                            
+
                             switch (task.Status)
                             {
                                 case "To Do":
@@ -262,18 +260,18 @@ namespace MyProject
                 }
                 else
                 {
-                    MessageBox.Show($"Không thể tải danh sách nhiệm vụ.\nMã lỗi: {response.StatusCode}", 
+                    MessageBox.Show($"Không thể tải danh sách nhiệm vụ.\nMã lỗi: {response.StatusCode}",
                         "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
             catch (HttpRequestException ex)
             {
-                MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}", 
+                MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}",
                     "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi tải nhiệm vụ: {ex.Message}", 
+                MessageBox.Show($"Lỗi khi tải nhiệm vụ: {ex.Message}",
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -311,7 +309,7 @@ namespace MyProject
             contextMenu.Items.Add("✅ Chuyển sang Done", null, async (s, e) => await ChangeTaskStatus(task, card, "Done"));
             contextMenu.Items.Add(new ToolStripSeparator());
             contextMenu.Items.Add("🗑️ Xóa nhiệm vụ", null, async (s, e) => await DeleteTask(task.TaskID, card));
-            
+
             card.ContextMenuStrip = contextMenu;
 
             var lblTaskName = new Label
@@ -417,21 +415,21 @@ namespace MyProject
 
                 var updateData = new { Status = newStatus };
                 var response = await ApiHelper.PutAsync($"tasks/{task.TaskID}", updateData);
-                
+
                 if (ApiHelper.IsUnauthorized(response))
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                         "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     AuthManager.Logout();
                     this.Close();
                     return;
                 }
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     hasChanges = true;
                     task.Status = newStatus;
-                    
+
                     var currentParent = taskCard.Parent as FlowLayoutPanel;
                     currentParent?.Controls.Remove(taskCard);
 
@@ -452,14 +450,14 @@ namespace MyProject
                 }
                 else
                 {
-                    MessageBox.Show("Không thể cập nhật trạng thái nhiệm vụ.", 
+                    MessageBox.Show("Không thể cập nhật trạng thái nhiệm vụ.",
                         "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     taskCard.Enabled = true;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}", 
+                MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}",
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 taskCard.Enabled = true;
             }
@@ -473,8 +471,8 @@ namespace MyProject
                                $"Ưu tiên: {task.Priority}\n" +
                                $"Trạng thái: {task.Status}\n\n" +
                                $"Task ID: {task.TaskID}";
-            
-            MessageBox.Show(detailsMessage, "Chi Tiết Nhiệm Vụ", 
+
+            MessageBox.Show(detailsMessage, "Chi Tiết Nhiệm Vụ",
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
@@ -494,22 +492,22 @@ namespace MyProject
                     taskCard.Enabled = false;
 
                     var response = await ApiHelper.DeleteAsync($"tasks/{taskId}");
-                    
+
                     if (ApiHelper.IsUnauthorized(response))
                     {
-                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                             "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         AuthManager.Logout();
                         this.Close();
                         return;
                     }
-                    
+
                     var responseContent = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
                     {
                         hasChanges = true;
-                        
+
                         var parentFlow = taskCard.Parent as FlowLayoutPanel;
                         parentFlow?.Controls.Remove(taskCard);
                         taskCard.Dispose();
@@ -556,41 +554,46 @@ namespace MyProject
             {
                 string newStatus = cboProjectStatus.SelectedItem.ToString();
                 cboProjectStatus.BackColor = GetStatusBackgroundColor(newStatus);
-                
+
                 try
                 {
                     var updateData = new { Status = newStatus };
                     var response = await ApiHelper.PutAsync($"projects/{projectId}", updateData);
-                    
+
                     if (ApiHelper.IsUnauthorized(response))
                     {
-                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                             "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         AuthManager.Logout();
                         this.Close();
                         return;
                     }
-                    
+
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    
+
                     if (response.IsSuccessStatusCode)
                     {
                         hasChanges = true;
-                        MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}", 
+                        MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}",
                             "Cập Nhật Thành Công", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     }
                     else
                     {
-                        MessageBox.Show($"Không thể cập nhật trạng thái dự án.\nResponse: {responseContent}", 
+                        MessageBox.Show($"Không thể cập nhật trạng thái dự án.\nResponse: {responseContent}",
                             "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}", 
+                    MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}",
                         "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void lblProjectDescription_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

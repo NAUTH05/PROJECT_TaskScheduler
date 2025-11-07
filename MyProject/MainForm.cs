@@ -290,10 +290,13 @@ namespace MyProject
             {
                 AddToRecentProjects(projectId, title, deadline, status);
                 
+                var project = currentProjects.FirstOrDefault(p => p.ProjectID == projectId);
+                string description = project?.ProjectDescription ?? "Không có mô tả";
+                
                 var projectView = new ProjectView(
                     projectId,
                     title,
-                    "Thiết lập API và Database, đảm bảo tính năng xác thực và lưu trữ dữ liệu an toàn.",
+                    description,
                     deadline,
                     status,
                     currentUserId,
