@@ -186,7 +186,6 @@ namespace MyProject
         {
             return status switch
             {
-                "Planning" => Color.FromArgb(155, 89, 182),
                 "To Do" => Color.FromArgb(231, 76, 60),
                 "In Progress" => Color.FromArgb(241, 196, 15),
                 "Completed" => Color.FromArgb(46, 204, 113),
