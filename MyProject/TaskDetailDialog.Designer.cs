@@ -22,10 +22,10 @@
 
         #region Windows Form Designer generated code
 
-        
-        
-        
-        
+
+
+
+
         private void InitializeComponent()
         {
             btnCloseTop = new Button();
@@ -45,9 +45,9 @@
             txtNewComment = new TextBox();
             btnSendComment = new Button();
             SuspendLayout();
-            //
+            // 
             // btnCloseTop
-            //
+            // 
             btnCloseTop.BackColor = Color.White;
             btnCloseTop.Cursor = Cursors.Hand;
             btnCloseTop.FlatAppearance.BorderSize = 0;
@@ -58,12 +58,12 @@
             btnCloseTop.Name = "btnCloseTop";
             btnCloseTop.Size = new Size(30, 30);
             btnCloseTop.TabIndex = 15;
-            btnCloseTop.Text = "Ã—";
+            btnCloseTop.Text = "X";
             btnCloseTop.UseVisualStyleBackColor = false;
             btnCloseTop.Click += BtnCloseTop_Click;
-            //
+            // 
             // lblDescriptionTitle
-            //
+            // 
             lblDescriptionTitle.AutoSize = true;
             lblDescriptionTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblDescriptionTitle.ForeColor = Color.Gray;
@@ -71,30 +71,30 @@
             lblDescriptionTitle.Name = "lblDescriptionTitle";
             lblDescriptionTitle.Size = new Size(41, 15);
             lblDescriptionTitle.TabIndex = 0;
-            lblDescriptionTitle.Text = "MÃ´ Táº£";
-            //
+            lblDescriptionTitle.Text = "Mô Tả";
+            // 
             // lblDescription
-            //
+            // 
             lblDescription.Font = new Font("Segoe UI", 9F);
             lblDescription.ForeColor = Color.FromArgb(44, 62, 80);
             lblDescription.Location = new Point(20, 70);
             lblDescription.Name = "lblDescription";
             lblDescription.Size = new Size(200, 60);
             lblDescription.TabIndex = 1;
-            //
+            // 
             // lblDueDateTitle
-            //
+            // 
             lblDueDateTitle.AutoSize = true;
             lblDueDateTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblDueDateTitle.ForeColor = Color.Gray;
             lblDueDateTitle.Location = new Point(20, 145);
             lblDueDateTitle.Name = "lblDueDateTitle";
-            lblDueDateTitle.Size = new Size(85, 15);
+            lblDueDateTitle.Size = new Size(88, 15);
             lblDueDateTitle.TabIndex = 2;
-            lblDueDateTitle.Text = "NgÃ y káº¿t thÃºc";
-            //
+            lblDueDateTitle.Text = "Ngày Kết Thúc";
+            // 
             // lblDueDate
-            //
+            // 
             lblDueDate.AutoSize = true;
             lblDueDate.Font = new Font("Segoe UI", 9F);
             lblDueDate.ForeColor = Color.FromArgb(231, 76, 60);
@@ -102,20 +102,20 @@
             lblDueDate.Name = "lblDueDate";
             lblDueDate.Size = new Size(0, 15);
             lblDueDate.TabIndex = 3;
-            //
+            // 
             // lblPriorityTitle
-            //
+            // 
             lblPriorityTitle.AutoSize = true;
             lblPriorityTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblPriorityTitle.ForeColor = Color.Gray;
             lblPriorityTitle.Location = new Point(20, 195);
             lblPriorityTitle.Name = "lblPriorityTitle";
-            lblPriorityTitle.Size = new Size(66, 15);
+            lblPriorityTitle.Size = new Size(97, 15);
             lblPriorityTitle.TabIndex = 4;
-            lblPriorityTitle.Text = "Äá»™ Æ°u tiÃªn";
-            //
+            lblPriorityTitle.Text = "Mức Độ Ưu Tiên";
+            // 
             // lblPriority
-            //
+            // 
             lblPriority.AutoSize = true;
             lblPriority.Font = new Font("Segoe UI", 9F);
             lblPriority.ForeColor = Color.FromArgb(44, 62, 80);
@@ -123,9 +123,9 @@
             lblPriority.Name = "lblPriority";
             lblPriority.Size = new Size(0, 15);
             lblPriority.TabIndex = 5;
-            //
+            // 
             // lblTrangThaiTitle
-            //
+            // 
             lblTrangThaiTitle.AutoSize = true;
             lblTrangThaiTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblTrangThaiTitle.ForeColor = Color.Gray;
@@ -133,10 +133,10 @@
             lblTrangThaiTitle.Name = "lblTrangThaiTitle";
             lblTrangThaiTitle.Size = new Size(64, 15);
             lblTrangThaiTitle.TabIndex = 6;
-            lblTrangThaiTitle.Text = "Tráº¡ng ThÃ¡i";
-            //
+            lblTrangThaiTitle.Text = "Trạng Thái";
+            // 
             // cboTrangThai
-            //
+            // 
             cboTrangThai.DropDownStyle = ComboBoxStyle.DropDownList;
             cboTrangThai.Font = new Font("Segoe UI", 9F);
             cboTrangThai.Items.AddRange(new object[] { "Done", "In Progress", "To Do", "Backlog", "In Review", "Testing", "Blocked", "Cancelled" });
@@ -145,20 +145,20 @@
             cboTrangThai.Size = new Size(220, 23);
             cboTrangThai.TabIndex = 7;
             cboTrangThai.SelectedIndexChanged += CboTrangThai_SelectedIndexChanged;
-            //
+            // 
             // lblNguoiGiaoTitle
-            //
+            // 
             lblNguoiGiaoTitle.AutoSize = true;
             lblNguoiGiaoTitle.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             lblNguoiGiaoTitle.ForeColor = Color.Gray;
             lblNguoiGiaoTitle.Location = new Point(250, 115);
             lblNguoiGiaoTitle.Name = "lblNguoiGiaoTitle";
-            lblNguoiGiaoTitle.Size = new Size(101, 15);
+            lblNguoiGiaoTitle.Size = new Size(104, 15);
             lblNguoiGiaoTitle.TabIndex = 8;
-            lblNguoiGiaoTitle.Text = "NgÆ°á»i Ä‘Æ°á»£c giao";
-            //
+            lblNguoiGiaoTitle.Text = "Người Được Giao";
+            // 
             // pnlNguoiGiao
-            //
+            // 
             pnlNguoiGiao.AutoScroll = true;
             pnlNguoiGiao.BackColor = Color.FromArgb(250, 250, 250);
             pnlNguoiGiao.BorderStyle = BorderStyle.FixedSingle;
@@ -166,9 +166,9 @@
             pnlNguoiGiao.Name = "pnlNguoiGiao";
             pnlNguoiGiao.Size = new Size(220, 120);
             pnlNguoiGiao.TabIndex = 9;
-            //
+            // 
             // btnAddMember
-            //
+            // 
             btnAddMember.BackColor = Color.FromArgb(88, 86, 214);
             btnAddMember.Cursor = Cursors.Hand;
             btnAddMember.FlatAppearance.BorderSize = 0;
@@ -179,12 +179,12 @@
             btnAddMember.Name = "btnAddMember";
             btnAddMember.Size = new Size(140, 28);
             btnAddMember.TabIndex = 10;
-            btnAddMember.Text = "+ ThÃªm NgÆ°á»i Má»›i";
+            btnAddMember.Text = "+ Thêm Người Mới";
             btnAddMember.UseVisualStyleBackColor = false;
             btnAddMember.Click += BtnAddMember_Click;
-            //
+            // 
             // lblCommentsTitle
-            //
+            // 
             lblCommentsTitle.AutoSize = true;
             lblCommentsTitle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             lblCommentsTitle.ForeColor = Color.FromArgb(44, 62, 80);
@@ -192,10 +192,10 @@
             lblCommentsTitle.Name = "lblCommentsTitle";
             lblCommentsTitle.Size = new Size(106, 19);
             lblCommentsTitle.TabIndex = 11;
-            lblCommentsTitle.Text = "BÃ¬nh Luáº­n Task";
-            //
+            lblCommentsTitle.Text = "Bình Luận Task";
+            // 
             // flowComments
-            //
+            // 
             flowComments.AutoScroll = true;
             flowComments.BackColor = Color.FromArgb(250, 250, 250);
             flowComments.BorderStyle = BorderStyle.FixedSingle;
@@ -206,18 +206,18 @@
             flowComments.Size = new Size(450, 183);
             flowComments.TabIndex = 12;
             flowComments.WrapContents = false;
-            //
+            // 
             // txtNewComment
-            //
+            // 
             txtNewComment.Font = new Font("Segoe UI", 9F);
             txtNewComment.Location = new Point(20, 555);
             txtNewComment.Name = "txtNewComment";
-            txtNewComment.PlaceholderText = "ThÃªm bÃ¬nh luáº­n hoáº·c liÃªn káº¿t...";
+            txtNewComment.PlaceholderText = "Thêm bình luận hoặc liên kết...";
             txtNewComment.Size = new Size(360, 23);
             txtNewComment.TabIndex = 13;
-            //
+            // 
             // btnSendComment
-            //
+            // 
             btnSendComment.BackColor = Color.FromArgb(88, 86, 214);
             btnSendComment.Cursor = Cursors.Hand;
             btnSendComment.FlatAppearance.BorderSize = 0;
@@ -228,12 +228,12 @@
             btnSendComment.Name = "btnSendComment";
             btnSendComment.Size = new Size(80, 25);
             btnSendComment.TabIndex = 14;
-            btnSendComment.Text = "Gá»­i";
+            btnSendComment.Text = "Gửi";
             btnSendComment.UseVisualStyleBackColor = false;
             btnSendComment.Click += BtnSendComment_Click;
-            //
+            // 
             // TaskDetailDialog
-            //
+            // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.White;
