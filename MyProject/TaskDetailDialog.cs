@@ -12,53 +12,46 @@ namespace MyProject
     {
         private string taskId;
         private string projectId;
-        
-        private bool isLoadingData = true; // Prevent auto-update on load
-        
-        // Left column controls
-        private Label? lblDescriptionTitle;
-        private Label? lblDescription;
-        private Label? lblDueDateTitle;
-        private Label? lblDueDate;
-        private Label? lblPriorityTitle;
-        private Label? lblPriority;
-        
-        // Right column controls
-        private Label? lblTrangThaiTitle;
-        private ComboBox? cboTrangThai;
-        private Label? lblNguoiGiaoTitle;
-        private Panel? pnlNguoiGiao; // Container for assigned member chip
-        private Button? btnAddMember;
-        
-        // Comments section
-        private Label? lblCommentsTitle;
-        private FlowLayoutPanel? flowComments;
-        private TextBox? txtNewComment;
-        private Button? btnSendComment;
-        private Button? btnClose;
+        private string projectOwnerId;
+        private string currentUserId;
+        private bool isOwner;
+
+        private bool isLoadingData = true;
 
         private List<ProjectMember> projectMembers = new List<ProjectMember>();
+        private List<AssignedUser> assignedUsers = new List<AssignedUser>();
         private ProjectView.TaskItem currentTask;
+        private Dictionary<string, Color> userColors = new Dictionary<string, Color>();
 
         public bool TaskUpdated { get; private set; }
 
-        public TaskDetailDialog(ProjectView.TaskItem task, string projectId)
+        public TaskDetailDialog(ProjectView.TaskItem task, string projectId, string ownerId, string userId)
         {
             this.taskId = task.TaskID;
             this.projectId = projectId;
             this.currentTask = task;
-            
+            this.projectOwnerId = ownerId;
+            this.currentUserId = userId;
+            this.isOwner = (currentUserId == projectOwnerId);
+
             InitializeComponent();
-            InitializeData(); // Change to async initialization
+
+            if (!isOwner)
+            {
+                btnAddMember.Visible = false;
+            }
+
+            InitializeData();
         }
 
         private async void InitializeData()
         {
             LoadProjectMembers();
-            await LoadTaskDetailsFromApiAsync(); // Make async
+            await LoadTaskDetailsFromApiAsync();
+            await LoadAssignedUsersAsync();
             LoadTaskComments();
-            
-            isLoadingData = false; // Set false AFTER all data loaded
+
+            isLoadingData = false;
         }
 
         private async Task LoadTaskDetailsFromApiAsync()
@@ -68,8 +61,7 @@ namespace MyProject
                 var response = await ApiHelper.GetAsync($"tasks/{taskId}");
                 if (!response.IsSuccessStatusCode)
                 {
-                    LoadTaskData(currentTask); // Fallback to passed task
-                    return;
+                    LoadTaskData(currentTask);                     return;
                 }
 
                 var json = await response.Content.ReadAsStringAsync();
@@ -77,17 +69,14 @@ namespace MyProject
 
                 if (result?.Data != null)
                 {
-                    // Update currentTask with fresh data
                     currentTask.TaskName = result.Data.TaskName;
                     currentTask.TaskDescription = result.Data.TaskDescription;
                     currentTask.DueDate = result.Data.DueDate;
                     currentTask.Priority = result.Data.Priority;
                     currentTask.Status = result.Data.Status;
-                    // currentTask.TaskType = result.Data.TaskType;
-                    
-                    // Get UserName from AssignedUserDetails
+
                     currentTask.AssignedToUserName = result.Data.AssignedUserDetails?.UserName;
-                    
+
                     LoadTaskData(currentTask);
                 }
                 else
@@ -97,194 +86,8 @@ namespace MyProject
             }
             catch
             {
-                LoadTaskData(currentTask); // Fallback on error
+                LoadTaskData(currentTask);
             }
-        }
-
-        private void InitializeComponent()
-        {
-            this.Size = new Size(500, 550);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.BackColor = Color.White;
-
-            // Close button
-            var btnCloseTop = new Button
-            {
-                Text = "×",
-                Size = new Size(30, 30),
-                Location = new Point(460, 5),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 12F),
-                ForeColor = Color.Gray,
-                Cursor = Cursors.Hand,
-                BackColor = Color.White
-            };
-            btnCloseTop.FlatAppearance.BorderSize = 0;
-            btnCloseTop.Click += (s, e) => this.Close();
-
-            // Left Column - Task Info
-            lblDescriptionTitle = new Label
-            {
-                Text = "Mô Tả",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(20, 50),
-                AutoSize = true,
-                ForeColor = Color.Gray
-            };
-
-            lblDescription = new Label
-            {
-                Location = new Point(20, 70),
-                Size = new Size(200, 60),
-                Font = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            lblDueDateTitle = new Label
-            {
-                Text = "Ngày kết thúc",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(20, 145),
-                AutoSize = true,
-                ForeColor = Color.Gray
-            };
-
-            lblDueDate = new Label
-            {
-                Location = new Point(20, 165),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(231, 76, 60)
-            };
-
-            lblPriorityTitle = new Label
-            {
-                Text = "Độ ưu tiên",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(20, 195),
-                AutoSize = true,
-                ForeColor = Color.Gray
-            };
-
-            lblPriority = new Label
-            {
-                Location = new Point(20, 215),
-                AutoSize = true,
-                Font = new Font("Segoe UI", 9F),
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            // Right Column - Status & Assignment
-            lblTrangThaiTitle = new Label
-            {
-                Text = "Trạng Thái",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(250, 50),
-                AutoSize = true,
-                ForeColor = Color.Gray
-            };
-
-            cboTrangThai = new ComboBox
-            {
-                Location = new Point(250, 70),
-                Size = new Size(220, 28),
-                Font = new Font("Segoe UI", 9F),
-                DropDownStyle = ComboBoxStyle.DropDownList
-            };
-            cboTrangThai.Items.AddRange(new object[] { 
-                "Done", "In Progress", "To Do", "Backlog", 
-                "In Review", "Testing", "Blocked", "Cancelled" 
-            });
-            cboTrangThai.SelectedIndexChanged += CboTrangThai_SelectedIndexChanged;
-
-            lblNguoiGiaoTitle = new Label
-            {
-                Text = "Người được giao",
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                Location = new Point(250, 115),
-                AutoSize = true,
-                ForeColor = Color.Gray
-            };
-
-            pnlNguoiGiao = new Panel
-            {
-                Location = new Point(250, 135),
-                Size = new Size(220, 40),
-                BackColor = Color.FromArgb(250, 250, 250),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            btnAddMember = new Button
-            {
-                Text = "+ Thêm Người Mới",
-                Size = new Size(140, 28),
-                Location = new Point(250, 185),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = Color.FromArgb(88, 86, 214),
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            btnAddMember.FlatAppearance.BorderSize = 0;
-            btnAddMember.Click += BtnAddMember_Click;
-
-            // Comments Section
-            lblCommentsTitle = new Label
-            {
-                Text = "Bình Luận Task",
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                Location = new Point(20, 310),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            flowComments = new FlowLayoutPanel
-            {
-                Location = new Point(20, 340),
-                Size = new Size(450, 120),
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                AutoScroll = true,
-                BackColor = Color.FromArgb(250, 250, 250),
-                Padding = new Padding(5),
-                BorderStyle = BorderStyle.FixedSingle
-            };
-
-            txtNewComment = new TextBox
-            {
-                Location = new Point(20, 475),
-                Size = new Size(360, 25),
-                Font = new Font("Segoe UI", 9F),
-                PlaceholderText = "Thêm bình luận hoặc liên kết..."
-            };
-
-            btnSendComment = new Button
-            {
-                Text = "Gửi",
-                Size = new Size(80, 25),
-                Location = new Point(390, 475),
-                FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = Color.FromArgb(88, 86, 214),
-                ForeColor = Color.White,
-                Cursor = Cursors.Hand
-            };
-            btnSendComment.FlatAppearance.BorderSize = 0;
-            btnSendComment.Click += BtnSendComment_Click;
-
-            this.Controls.AddRange(new Control[] {
-                btnCloseTop, 
-                lblDescriptionTitle, lblDescription,
-                lblDueDateTitle, lblDueDate, 
-                lblPriorityTitle, lblPriority,
-                lblTrangThaiTitle, cboTrangThai,
-                lblNguoiGiaoTitle, pnlNguoiGiao, btnAddMember,
-                lblCommentsTitle, flowComments,
-                txtNewComment, btnSendComment
-            });
         }
 
         private async void CboTrangThai_SelectedIndexChanged(object? sender, EventArgs e)
@@ -297,33 +100,36 @@ namespace MyProject
             await SendComment();
         }
 
+        private void BtnCloseTop_Click(object? sender, EventArgs e)
+        {
+            this.Close();
+        }
+
         private void LoadTaskData(ProjectView.TaskItem task)
         {
             this.Text = task.TaskName;
             lblDescription!.Text = task.TaskDescription ?? "Phác thảo các bảng và mối quan hệ.";
-            
+
             DateTime.TryParse(task.DueDate, out var dueDate);
             lblDueDate!.Text = dueDate.ToString("dd/MM/yyyy");
             lblPriority!.Text = task.Priority ?? "High";
-            
-            // Set status without triggering event
+
             cboTrangThai!.SelectedIndexChanged -= CboTrangThai_SelectedIndexChanged;
             cboTrangThai.SelectedItem = task.Status ?? "To Do";
             if (cboTrangThai.SelectedItem == null && cboTrangThai.Items.Count > 0)
             {
-                cboTrangThai.SelectedIndex = 2; // Default to "To Do"
+                cboTrangThai.SelectedIndex = 2;
             }
             cboTrangThai.SelectedIndexChanged += CboTrangThai_SelectedIndexChanged;
-            
-            // Display assigned member
+
             DisplayAssignedMember();
         }
 
         private void DisplayAssignedMember()
         {
             pnlNguoiGiao!.Controls.Clear();
-            
-            if (string.IsNullOrEmpty(currentTask.AssignedToUserName))
+
+            if (assignedUsers == null || assignedUsers.Count == 0)
             {
                 var lblEmpty = new Label
                 {
@@ -337,25 +143,40 @@ namespace MyProject
                 return;
             }
 
-            // Create member chip
-            var chip = CreateMemberChip(currentTask.AssignedToUserName);
-            chip.Location = new Point(5, 5);
-            pnlNguoiGiao.Controls.Add(chip);
+            int xOffset = 5;
+            int yOffset = 5;
+            int maxWidth = pnlNguoiGiao.Width - 10;
+
+            foreach (var user in assignedUsers)
+            {
+                var chip = CreateMemberChip(user);
+
+                if (xOffset + chip.Width > maxWidth && xOffset > 5)
+                {
+                    xOffset = 5;
+                    yOffset += chip.Height + 5;
+                }
+
+                chip.Location = new Point(xOffset, yOffset);
+                pnlNguoiGiao.Controls.Add(chip);
+
+                xOffset += chip.Width + 5;
+            }
         }
 
-        private Panel CreateMemberChip(string userName)
+        private Panel CreateMemberChip(AssignedUser user)
         {
             var chipPanel = new Panel
             {
                 Height = 28,
                 AutoSize = true,
                 BackColor = Color.FromArgb(88, 86, 214),
-                Padding = new Padding(8, 5, 4, 5)
-            };
+                Padding = new Padding(8, 5, 4, 5),
+                Tag = user.UserID             };
 
             var lblName = new Label
             {
-                Text = userName,
+                Text = user.UserName ?? user.Email,
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                 ForeColor = Color.White,
                 AutoSize = true,
@@ -371,20 +192,23 @@ namespace MyProject
                 Font = new Font("Segoe UI", 8F, FontStyle.Bold),
                 ForeColor = Color.White,
                 BackColor = Color.FromArgb(231, 76, 60),
-                Cursor = Cursors.Hand
-            };
+                Cursor = Cursors.Hand,
+                Tag = user.UserID             };
             btnRemove.FlatAppearance.BorderSize = 0;
             btnRemove.Click += BtnRemove_Click;
 
             chipPanel.Controls.AddRange(new Control[] { lblName, btnRemove });
             chipPanel.Width = lblName.Width + btnRemove.Width + 20;
-            
+
             return chipPanel;
         }
 
         private async void BtnRemove_Click(object? sender, EventArgs e)
         {
-            await RemoveMemberAsync();
+            if (sender is Button btn && btn.Tag is string userIdToRemove)
+            {
+                await RemoveMemberAsync(userIdToRemove);
+            }
         }
 
         private async void LoadProjectMembers()
@@ -402,30 +226,47 @@ namespace MyProject
             catch { }
         }
 
+        private async Task LoadAssignedUsersAsync()
+        {
+            try
+            {
+                var response = await ApiHelper.GetAsync($"tasks/{taskId}/assigned-users");
+                if (!response.IsSuccessStatusCode)
+                {
+                    assignedUsers = new List<AssignedUser>();
+                    DisplayAssignedMember();
+                    return;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<AssignedUsersResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                assignedUsers = result?.Data ?? new List<AssignedUser>();
+                DisplayAssignedMember();
+            }
+            catch
+            {
+                assignedUsers = new List<AssignedUser>();
+                DisplayAssignedMember();
+            }
+        }
+
         private void BtnAddMember_Click(object sender, EventArgs e)
         {
-            // Check if already assigned
-            if (!string.IsNullOrEmpty(currentTask.AssignedToUserName))
-            {
-                MessageBox.Show("Task đã được giao. Vui lòng gỡ người hiện tại trước.", "Thông báo", 
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
-                return;
-            }
-
-            var availableMembers = projectMembers.ToList();
+            var assignedUserIds = assignedUsers.Select(u => u.UserID).ToList();
+            var availableMembers = projectMembers.Where(m => !assignedUserIds.Contains(m.UserID)).ToList();
 
             if (availableMembers.Count == 0)
             {
-                MessageBox.Show("Không có thành viên nào đã giao.", "Thông báo", 
+                MessageBox.Show("Không có thành viên nào đã giao.", "Thông báo",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            // Simple selection dialog
             var selectForm = new Form
             {
                 Text = "Chọn Thành Viên",
-                Size = new Size(320, 250),
+                Size = new Size(320, 260),
                 StartPosition = FormStartPosition.CenterParent,
                 FormBorderStyle = FormBorderStyle.FixedDialog,
                 MaximizeBox = false,
@@ -492,30 +333,27 @@ namespace MyProject
             try
             {
                 var response = await ApiHelper.PutAsync($"tasks/{taskId}/assign", new { userId = member.UserID });
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     TaskUpdated = true;
-                    
-                    // Parse response to get assigned user details
-                    var json = await response.Content.ReadAsStringAsync();
-                    var result = JsonSerializer.Deserialize<AssignResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    
-                    // Update with UserName from response or use member.UserName
-                    currentTask.AssignedToUserName = result?.Data?.AssignedToUser?.FullName ?? member.UserName;
-                    
-                    DisplayAssignedMember();
-                    MessageBox.Show($"Đã giao task cho: {currentTask.AssignedToUserName}", "Thành công", 
+
+                    await LoadAssignedUsersAsync();
+
+                    MessageBox.Show($"Đã giao task cho: {member.UserName}", "Thành công",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
             catch { }
         }
 
-        private async Task RemoveMemberAsync()
+        private async Task RemoveMemberAsync(string userId)
         {
+            var userToRemove = assignedUsers.FirstOrDefault(u => u.UserID == userId);
+            if (userToRemove == null) return;
+
             var result = MessageBox.Show(
-                $"Gỡ {currentTask.AssignedToUserName} khỏi task này?",
+                $"Gỡ {userToRemove.UserName} khỏi task này?",
                 "Xác nhận",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question
@@ -525,41 +363,33 @@ namespace MyProject
 
             try
             {
-                // Debug: Show taskId
-                // MessageBox.Show($"Task ID: {taskId}", "Debug");
-                
-                // API expects PUT with empty body
-                var response = await ApiHelper.PutAsync($"tasks/{taskId}/unassign", null);
-                
-                // Debug: Show status code
-                var statusCode = (int)response.StatusCode;
-                
+                var response = await ApiHelper.DeleteAsync($"tasks/{taskId}/unassign-user/{userId}");
+
                 if (response.IsSuccessStatusCode)
                 {
                     TaskUpdated = true;
-                    currentTask.AssignedToUserName = null;
-                    DisplayAssignedMember();
-                    MessageBox.Show("Đã gỡ người được giao!", "Thành công", 
+
+                    await LoadAssignedUsersAsync();
+
+                    MessageBox.Show($"Đã gỡ {userToRemove.UserName}!", "Thành công",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 else
                 {
-                    // Show detailed error
                     var errorContent = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(
                         $"Không thể gỡ người được giao!\n\n" +
-                        $"Status: {response.StatusCode} ({statusCode})\n" +
-                        $"Task ID: {taskId}\n\n" +
-                        $"Response:\n{errorContent}", 
-                        "Lỗi API", 
-                        MessageBoxButtons.OK, 
+                        $"Status: {response.StatusCode}\n" +
+                        $"Response:\n{errorContent}",
+                        "Lỗi API",
+                        MessageBoxButtons.OK,
                         MessageBoxIcon.Error
                     );
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Exception: {ex.GetType().Name}\n\nMessage: {ex.Message}\n\nStackTrace:\n{ex.StackTrace}", 
+                MessageBox.Show($"Exception: {ex.GetType().Name}\n\nMessage: {ex.Message}\n\nStackTrace:\n{ex.StackTrace}",
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -593,61 +423,201 @@ namespace MyProject
 
                 foreach (var comment in comments)
                 {
-                    var commentPanel = new Panel
+                                        var userName = comment.UserDetails?.UserName ?? comment.UserName ?? "Unknown User";
+                    var userId = comment.UserDetails?.UserID ?? comment.CreatedByUserID ?? "";
+
+                    var userColor = GetColorForUser(userId);
+
+                    var commentPanel = new FlowLayoutPanel
                     {
-                        Width = flowComments.Width - 20,
                         AutoSize = true,
-                        MinimumSize = new Size(flowComments.Width - 20, 40),
-                        BackColor = Color.White,
-                        Margin = new Padding(3),
-                        Padding = new Padding(8)
+                        MaximumSize = new Size(flowComments.Width - 30, 0),
+                        MinimumSize = new Size(flowComments.Width - 30, 25),
+                        Margin = new Padding(5, 2, 5, 2),
+                        Padding = new Padding(3),
+                        FlowDirection = FlowDirection.LeftToRight,
+                        WrapContents = true,
+                        BorderStyle = BorderStyle.FixedSingle
                     };
 
-                    // Get UserName from UserDetails or fallback to old field
-                    string userName = comment.UserDetails?.UserName ?? comment.UserName ?? "Unknown";
-
-                    var lblUser = new Label
+                    var userNameLabel = new Label
                     {
-                        Text = userName + " • " + DateTime.Now.ToString("dd/MM/yyyy"),
-                        Font = new Font("Segoe UI", 8F, FontStyle.Bold),
-                        Location = new Point(5, 5),
+                        Text = userName + ": ",
                         AutoSize = true,
-                        ForeColor = Color.FromArgb(88, 86, 214)
+                        Font = new Font("Segoe UI", 9F, FontStyle.Bold),
+                        ForeColor = userColor,
+                        Margin = new Padding(0)
                     };
 
-                    var lblContent = new Label
+                    var timestampLabel = new Label
+                    {
+                        Text = FormatCommentTimestamp(comment.CreatedAt),
+                        AutoSize = true,
+                        Font = new Font("Segoe UI", 7.5F, FontStyle.Italic),
+                        ForeColor = Color.Gray,
+                        Margin = new Padding(5, 2, 0, 0)
+                    };
+
+                    commentPanel.Controls.Add(userNameLabel);
+                    commentPanel.Controls.Add(timestampLabel);
+                    commentPanel.SetFlowBreak(timestampLabel, true);
+
+                    var contentBox = new RichTextBox
                     {
                         Text = comment.Content,
-                        Font = new Font("Segoe UI", 9F),
-                        Location = new Point(5, 22),
-                        Size = new Size(commentPanel.Width - 15, 0),
-                        AutoSize = true,
-                        ForeColor = Color.FromArgb(44, 62, 80)
+                        ReadOnly = true,
+                        BorderStyle = BorderStyle.None,
+                        ScrollBars = RichTextBoxScrollBars.None,
+                        Font = new Font("Segoe UI", 9F, FontStyle.Regular),
+                        ForeColor = Color.Black,
+                        BackColor = SystemColors.Control,
+                        Margin = new Padding(0),
+                        DetectUrls = true,
+                        Cursor = Cursors.IBeam,
+                        Width = flowComments.Width - 90,
+                        Multiline = true,
+                        WordWrap = true
                     };
 
-                    commentPanel.Controls.AddRange(new Control[] { lblUser, lblContent });
-                    commentPanel.Height = lblContent.Bottom + 8;
+                    using (Graphics g = contentBox.CreateGraphics())
+                    {
+                        SizeF size = g.MeasureString(comment.Content, contentBox.Font, contentBox.Width);
+                        contentBox.Height = (int)Math.Ceiling(size.Height) + 10;
+                    }
+
+                    contentBox.LinkClicked += (s, e) =>
+                    {
+                        try
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = e.LinkText,
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Không thể mở link: {ex.Message}", "Lỗi",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    };
+
+                    commentPanel.Controls.Add(contentBox);
+
+                    if (userId == currentUserId && !string.IsNullOrEmpty(comment.CommentID))
+                    {
+                        var btnDelete = new Button
+                        {
+                            Text = "✕",
+                            Size = new Size(22, 22),
+                            BackColor = Color.FromArgb(220, 53, 69),
+                            ForeColor = Color.White,
+                            FlatStyle = FlatStyle.Flat,
+                            Cursor = Cursors.Hand,
+                            Tag = comment.CommentID,
+                            Font = new Font("Segoe UI", 9, FontStyle.Bold),
+                            Margin = new Padding(5, 0, 0, 0)
+                        };
+                        btnDelete.FlatAppearance.BorderSize = 0;
+                        btnDelete.Click += async (s, e) => await DeleteComment(comment.CommentID);
+
+                        commentPanel.Controls.Add(btnDelete);
+                    }
+
                     flowComments.Controls.Add(commentPanel);
                 }
             }
             catch { }
         }
 
+        private Color GetColorForUser(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return Color.Gray;
+
+            if (!userColors.ContainsKey(userId))
+            {
+                int hash = userId.GetHashCode();
+                Random rnd = new Random(hash);
+
+                int r = rnd.Next(50, 200);
+                int g = rnd.Next(50, 200);
+                int b = rnd.Next(50, 200);
+
+                userColors[userId] = Color.FromArgb(r, g, b);
+            }
+
+            return userColors[userId];
+        }
+
+        private string FormatCommentTimestamp(string? createdAt)
+        {
+            if (string.IsNullOrEmpty(createdAt))
+                return "";
+
+            try
+            {
+                DateTime dt = DateTime.Parse(createdAt);
+                return dt.ToString("dd/MM/yyyy HH:mm:ss");
+            }
+            catch
+            {
+                return createdAt;
+            }
+        }
+
+        private async Task DeleteComment(string commentId)
+        {
+            try
+            {
+                var result = MessageBox.Show("Bạn có chắc muốn xóa bình luận này?", "Xác nhận xóa",
+                    MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+                if (result != DialogResult.Yes) return;
+
+                var response = await ApiHelper.DeleteAsync($"comments/{commentId}");
+                if (response.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Đã xóa bình luận!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    LoadTaskComments();
+                    TaskUpdated = true;
+                }
+                else if (ApiHelper.IsUnauthorized(response))
+                {
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    AuthManager.Logout();
+                    this.Close();
+                }
+                else if (ApiHelper.IsForbidden(response))
+                {
+                    MessageBox.Show("Bạn không có quyền xóa bình luận này!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+                else
+                {
+                    MessageBox.Show("Không thể xóa bình luận!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Lỗi: {ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private async Task UpdateTaskStatus()
         {
             if (isLoadingData) return;
             if (cboTrangThai?.SelectedItem == null) return;
-            
+
             try
             {
                 var newStatus = cboTrangThai.SelectedItem.ToString();
                 var response = await ApiHelper.PutAsync($"tasks/{taskId}", new { Status = newStatus });
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     TaskUpdated = true;
                     currentTask.Status = newStatus;
-                    MessageBox.Show($"Cập nhật trạng thái: {newStatus}", "Thành công", 
+                    MessageBox.Show($"Cập nhật trạng thái: {newStatus}", "Thành công",
                         MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
             }
@@ -657,7 +627,7 @@ namespace MyProject
         private async Task SendComment()
         {
             if (string.IsNullOrWhiteSpace(txtNewComment?.Text)) return;
-            
+
             try
             {
                 var response = await ApiHelper.PostAsync($"tasks/{taskId}/comments", new { content = txtNewComment.Text.Trim() });
@@ -672,9 +642,13 @@ namespace MyProject
 
         public class Comment
         {
-            public string? UserName { get; set; } // For backward compatibility
+            public string? CommentID { get; set; }
             public string? Content { get; set; }
-            public UserDetails? UserDetails { get; set; } // NEW in v2.0.0
+            public string? CreatedAt { get; set; }
+            public string? CreatedByUserID { get; set; }
+            public string? TaskID { get; set; }
+            public UserDetails? UserDetails { get; set; } 
+                        public string? UserName { get; set; }
         }
 
         public class UserDetails
@@ -701,6 +675,14 @@ namespace MyProject
             public List<ProjectMember>? Members { get; set; }
         }
 
+        public class AssignedUsersResponse
+        {
+            public string? Message { get; set; }
+            public string? TaskId { get; set; }
+            public int Count { get; set; }
+            public List<AssignedUser>? Data { get; set; }
+        }
+
         public class TaskDetailResponse
         {
             public string? Message { get; set; }
@@ -718,6 +700,17 @@ namespace MyProject
             public string? Status { get; set; }
             public string? AssignedToUserID { get; set; }
             public AssignedUserDetails? AssignedUserDetails { get; set; }
+            public List<AssignedUser>? AssignedUsers { get; set; }
+            public int AssignedUsersCount { get; set; }
+        }
+
+        public class AssignedUser
+        {
+            public string? AssignmentID { get; set; }
+            public string? UserID { get; set; }
+            public string? UserName { get; set; }
+            public string? Email { get; set; }
+            public string? AssignedAt { get; set; }
         }
 
         public class AssignedUserDetails
@@ -749,4 +742,3 @@ namespace MyProject
         }
     }
 }
-//

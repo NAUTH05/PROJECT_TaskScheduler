@@ -41,7 +41,7 @@ namespace MyProject
             lblStat1Value.Text = "0";
             lblStat2Value.Text = "0";
             lblStat3Value.Text = "0";
-            
+
             lblUserName.Paint += (s, e) =>
             {
                 e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -73,9 +73,9 @@ namespace MyProject
             panelProjectsList.Controls.Add(flowProjectsList);
 
             lblTasksTitle.Text = "Nhiệm Vụ Gần Đây";
-            
+
             panelTaskColumns.Controls.Clear();
-            
+
             var flowRecentProjects = new FlowLayoutPanel
             {
                 Dock = DockStyle.Fill,
@@ -85,7 +85,7 @@ namespace MyProject
                 Padding = new Padding(15),
                 BackColor = Color.White
             };
-            
+
             panelTaskColumns.Controls.Add(flowRecentProjects);
 
             UpdateRecentProjectsDisplay();
@@ -93,9 +93,9 @@ namespace MyProject
 
         private void LblUserName_Click(object sender, EventArgs e)
         {
-            var result = MessageBox.Show("Bạn có muốn đăng xuất?", "Đăng xuất", 
+            var result = MessageBox.Show("Bạn có muốn đăng xuất?", "Đăng xuất",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            
+
             if (result == DialogResult.Yes)
             {
                 AuthManager.Logout();
@@ -113,26 +113,23 @@ namespace MyProject
 
             try
             {
-                // Load owned projects
-                var ownedResponse = await ApiHelper.GetAsync($"projects?OwnerUserID={currentUserId}");
-                
+                                var ownedResponse = await ApiHelper.GetAsync($"projects?OwnerUserID={currentUserId}");
+
                 if (ApiHelper.IsUnauthorized(ownedResponse))
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                         "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     AuthManager.Logout();
                     this.Close();
                     return;
                 }
 
-                // Load shared projects (where user is member)
-                var sharedResponse = await ApiHelper.GetAsync("projects/shared/list");
-                
+                                var sharedResponse = await ApiHelper.GetAsync("projects/shared/list");
+
                 flowProjectsList.Controls.Clear();
                 currentProjects.Clear();
 
-                // Process owned projects
-                if (ownedResponse.IsSuccessStatusCode)
+                                if (ownedResponse.IsSuccessStatusCode)
                 {
                     var ownedContent = await ownedResponse.Content.ReadAsStringAsync();
                     var ownedResult = JsonSerializer.Deserialize<ProjectsApiResponse>(ownedContent, new JsonSerializerOptions
@@ -146,8 +143,7 @@ namespace MyProject
                     }
                 }
 
-                // Process shared projects
-                if (sharedResponse.IsSuccessStatusCode)
+                                if (sharedResponse.IsSuccessStatusCode)
                 {
                     var sharedContent = await sharedResponse.Content.ReadAsStringAsync();
                     var sharedResult = JsonSerializer.Deserialize<SharedProjectsResponse>(sharedContent, new JsonSerializerOptions
@@ -157,11 +153,9 @@ namespace MyProject
 
                     if (sharedResult?.Projects != null)
                     {
-                        // Convert SharedProjectData to ProjectData
-                        foreach (var sharedProject in sharedResult.Projects)
+                                                foreach (var sharedProject in sharedResult.Projects)
                         {
-                            // Avoid duplicates (in case user is both owner and member)
-                            if (!currentProjects.Any(p => p.ProjectID == sharedProject.ProjectID))
+                                                        if (!currentProjects.Any(p => p.ProjectID == sharedProject.ProjectID))
                             {
                                 currentProjects.Add(new ProjectData
                                 {
@@ -178,8 +172,7 @@ namespace MyProject
                     }
                 }
 
-                // Display all projects
-                if (currentProjects.Count > 0)
+                                if (currentProjects.Count > 0)
                 {
                     foreach (var project in currentProjects)
                     {
@@ -188,8 +181,7 @@ namespace MyProject
 
                         int progress = CalculateProgress(project.Status);
 
-                        // Show badge if user is member (not owner)
-                        bool isMember = project.OwnerUserID != currentUserId;
+                                                bool isMember = project.OwnerUserID != currentUserId;
                         string titlePrefix = isMember ? "👥 " : "";
 
                         AddProjectItem(
@@ -213,13 +205,13 @@ namespace MyProject
             }
             catch (HttpRequestException ex)
             {
-                MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}", 
+                MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}",
                     "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoadSampleProjects();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi tải dự án: {ex.Message}", 
+                MessageBox.Show($"Lỗi khi tải dự án: {ex.Message}",
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 LoadSampleProjects();
             }
@@ -335,14 +327,14 @@ namespace MyProject
                 Cursor = Cursors.Hand,
                 Tag = projectId
             };
-            
-            lblTitle.Click += (s, e) => 
+
+            lblTitle.Click += (s, e) =>
             {
                 AddToRecentProjects(projectId, title, deadline, status);
-                
+
                 var project = currentProjects.FirstOrDefault(p => p.ProjectID == projectId);
                 string description = project?.ProjectDescription ?? "Không có mô tả";
-                
+
                 var projectView = new ProjectView(
                     projectId,
                     title,
@@ -350,11 +342,12 @@ namespace MyProject
                     deadline,
                     status,
                     currentUserId,
-                    currentUserName
+                    currentUserName,
+                    project?.OwnerUserID ?? currentUserId
                 );
-                
+
                 var dialogResult = projectView.ShowDialog();
-                
+
                 if (dialogResult == DialogResult.OK)
                 {
                     this.Text = "TaskScheduler Dashboard - Đang tải lại...";
@@ -453,7 +446,7 @@ namespace MyProject
                 };
 
                 btnDelete.FlatAppearance.BorderSize = 0;
-                
+
                 var tooltip = new ToolTip();
                 tooltip.SetToolTip(btnDelete, "Xóa dự án");
 
@@ -520,7 +513,7 @@ namespace MyProject
         {
             var flowRecentProjects = panelTaskColumns.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
             if (flowRecentProjects == null) return;
-            
+
             flowRecentProjects.Controls.Clear();
 
             if (recentProjects.Count == 0)
@@ -597,8 +590,8 @@ namespace MyProject
 
                 var lblDescription = new Label
                 {
-                    Text = project.ProjectDescription?.Length > 50 
-                        ? project.ProjectDescription.Substring(0, 50) + "..." 
+                    Text = project.ProjectDescription?.Length > 50
+                        ? project.ProjectDescription.Substring(0, 50) + "..."
                         : (project.ProjectDescription ?? "Không có mô tả"),
                     Font = new Font("Segoe UI", 8F),
                     ForeColor = Color.Gray,
@@ -616,9 +609,10 @@ namespace MyProject
                         endDate.ToString("dd/MM/yyyy"),
                         project.Status,
                         currentUserId,
-                        currentUserName
+                        currentUserName,
+                        project.OwnerUserID
                     );
-                    
+
                     if (projectView.ShowDialog() == DialogResult.OK)
                     {
                         LoadProjectsFromApi();
@@ -664,7 +658,7 @@ namespace MyProject
         {
             if (string.IsNullOrEmpty(currentUserId))
             {
-                MessageBox.Show("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", 
+                MessageBox.Show("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.",
                     "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -723,23 +717,23 @@ namespace MyProject
                 projectPanel.Enabled = false;
 
                 var response = await ApiHelper.DeleteAsync($"projects/{projectId}");
-                
+
                 if (ApiHelper.IsUnauthorized(response))
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
+                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
                         "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     AuthManager.Logout();
                     this.Close();
                     return;
                 }
-                
+
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
                     currentProjects.RemoveAll(p => p.ProjectID == projectId);
                     recentProjects.RemoveAll(p => p.ProjectID == projectId);
-                    
+
                     flowProjectsList.Controls.Remove(projectPanel);
                     projectPanel.Dispose();
 
@@ -792,7 +786,7 @@ namespace MyProject
     {
         [System.Text.Json.Serialization.JsonPropertyName("ProjectID")]
         public string ProjectID { get; set; }
-        
+
         public string ProjectName { get; set; }
         public string ProjectDescription { get; set; }
         public string StartDate { get; set; }
@@ -817,3 +811,5 @@ namespace MyProject
         public string OwnerUserID { get; set; }
     }
 }
+
+

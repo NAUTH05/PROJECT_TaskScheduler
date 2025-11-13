@@ -43,16 +43,16 @@
             btnAddMember = new Button();
             btnAddTask = new Button();
             dgvTasks = new DataGridView();
-            lblComments = new Label();
-            flowComments = new FlowLayoutPanel();
-            txtNewComment = new TextBox();
-            btnSendComment = new Button();
             dataGridViewTextBoxColumn1 = new DataGridViewTextBoxColumn();
             dataGridViewTextBoxColumn2 = new DataGridViewTextBoxColumn();
             dataGridViewTextBoxColumn3 = new DataGridViewTextBoxColumn();
             dataGridViewTextBoxColumn4 = new DataGridViewTextBoxColumn();
             dataGridViewTextBoxColumn5 = new DataGridViewTextBoxColumn();
             dataGridViewTextBoxColumn7 = new DataGridViewTextBoxColumn();
+            lblComments = new Label();
+            flowComments = new FlowLayoutPanel();
+            txtNewComment = new TextBox();
+            btnSendComment = new Button();
             panelProjectInfo.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvTasks).BeginInit();
             SuspendLayout();
@@ -176,9 +176,9 @@
             btnAddMember.FlatStyle = FlatStyle.Flat;
             btnAddMember.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnAddMember.ForeColor = Color.White;
-            btnAddMember.Location = new Point(1190, 20);
+            btnAddMember.Location = new Point(1186, 20);
             btnAddMember.Name = "btnAddMember";
-            btnAddMember.Size = new Size(130, 32);
+            btnAddMember.Size = new Size(134, 30);
             btnAddMember.TabIndex = 5;
             btnAddMember.Text = "+ Thêm Thành Viên";
             btnAddMember.UseVisualStyleBackColor = false;
@@ -216,6 +216,42 @@
             dgvTasks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvTasks.Size = new Size(1340, 300);
             dgvTasks.TabIndex = 6;
+            // 
+            // dataGridViewTextBoxColumn1
+            // 
+            dataGridViewTextBoxColumn1.HeaderText = "TÊN TASK";
+            dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            dataGridViewTextBoxColumn1.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn2
+            // 
+            dataGridViewTextBoxColumn2.HeaderText = "TRẠNG THÁI";
+            dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            dataGridViewTextBoxColumn2.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn3
+            // 
+            dataGridViewTextBoxColumn3.HeaderText = "NGƯỜI ĐƯỢC GIAO";
+            dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
+            dataGridViewTextBoxColumn3.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn4
+            // 
+            dataGridViewTextBoxColumn4.HeaderText = "NGÀY KẾT THÚC";
+            dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
+            dataGridViewTextBoxColumn4.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn5
+            // 
+            dataGridViewTextBoxColumn5.HeaderText = "ƯU TIÊN";
+            dataGridViewTextBoxColumn5.Name = "dataGridViewTextBoxColumn5";
+            dataGridViewTextBoxColumn5.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn7
+            // 
+            dataGridViewTextBoxColumn7.HeaderText = "MÔ TẢ";
+            dataGridViewTextBoxColumn7.Name = "dataGridViewTextBoxColumn7";
+            dataGridViewTextBoxColumn7.ReadOnly = true;
             // 
             // lblComments
             // 
@@ -263,48 +299,12 @@
             btnSendComment.UseVisualStyleBackColor = false;
             btnSendComment.Click += btnSendComment_Click;
             // 
-            // dataGridViewTextBoxColumn1
-            // 
-            dataGridViewTextBoxColumn1.HeaderText = "TÊN TASK";
-            dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
-            dataGridViewTextBoxColumn1.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn2
-            // 
-            dataGridViewTextBoxColumn2.HeaderText = "TRẠNG THÁI";
-            dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
-            dataGridViewTextBoxColumn2.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn3
-            // 
-            dataGridViewTextBoxColumn3.HeaderText = "NGƯỢC ĐƯỢC GIAO";
-            dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
-            dataGridViewTextBoxColumn3.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn4
-            // 
-            dataGridViewTextBoxColumn4.HeaderText = "NGÀY KẾT THÚC";
-            dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
-            dataGridViewTextBoxColumn4.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn5
-            // 
-            dataGridViewTextBoxColumn5.HeaderText = "ƯU TIÊN";
-            dataGridViewTextBoxColumn5.Name = "dataGridViewTextBoxColumn5";
-            dataGridViewTextBoxColumn5.ReadOnly = true;
-            // 
-            // dataGridViewTextBoxColumn7
-            // 
-            dataGridViewTextBoxColumn7.HeaderText = "MÔ TẢ";
-            dataGridViewTextBoxColumn7.Name = "dataGridViewTextBoxColumn7";
-            dataGridViewTextBoxColumn7.ReadOnly = true;
-            // 
             // ProjectView
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.FromArgb(245, 245, 245);
-            ClientSize = new Size(1400, 900);
+            ClientSize = new Size(1400, 849);
             Controls.Add(lblHeader);
             Controls.Add(lblSubHeader);
             Controls.Add(lblUserIdDisplay);

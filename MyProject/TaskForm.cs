@@ -120,22 +120,17 @@ namespace MyProject
 
             try
             {
-                // Determine assigned user ID
-                string assignedUserId = currentUserId; // Default to creator
-
+                                string assignedUserId = currentUserId; 
                 if (cboAssignTo != null && cboAssignTo.SelectedIndex >= 0)
                 {
-                    if (cboAssignTo.SelectedIndex == 1) // "Không giao"
-                    {
+                    if (cboAssignTo.SelectedIndex == 1)                     {
                         assignedUserId = null;
                     }
-                    else if (cboAssignTo.SelectedIndex > 1) // Specific member
-                    {
+                    else if (cboAssignTo.SelectedIndex > 1)                     {
                         var selectedMember = projectMembers[cboAssignTo.SelectedIndex - 2];
                         assignedUserId = selectedMember.UserID;
                     }
-                    // Index 0 = "Tự động (Tôi)" = currentUserId (already set)
-                }
+                                    }
 
                 var taskData = new
                 {
@@ -223,8 +218,7 @@ namespace MyProject
 
                 projectMembers = result?.Members ?? new List<ProjectMember>();
                 
-                // Populate cboAssignTo if it exists
-                if (cboAssignTo != null)
+                                if (cboAssignTo != null)
                 {
                     cboAssignTo.Items.Clear();
                     cboAssignTo.Items.Add("-- Tự động (Tôi) --");
@@ -235,8 +229,7 @@ namespace MyProject
                         cboAssignTo.Items.Add(member.UserName);
                     }
                     
-                    cboAssignTo.SelectedIndex = 0; // Default to "Tự động (Tôi)"
-                }
+                    cboAssignTo.SelectedIndex = 0;                 }
             }
             catch { }
         }
@@ -276,3 +269,5 @@ namespace MyProject
         }
     }
 }
+
+

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -11,14 +11,13 @@ namespace MyProject
     {
         private static readonly HttpClient client = new HttpClient();
         private const string BaseUrl = "http://localhost:3300/api";
-
         public static async Task<HttpResponseMessage> GetAsync(string endpoint)
         {
             client.DefaultRequestHeaders.Clear();
-            
+
             if (AuthManager.IsLoggedIn())
             {
-                client.DefaultRequestHeaders.Authorization = 
+                client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", AuthManager.Token);
             }
 
@@ -28,10 +27,10 @@ namespace MyProject
         public static async Task<HttpResponseMessage> PostAsync(string endpoint, object data)
         {
             client.DefaultRequestHeaders.Clear();
-            
+
             if (AuthManager.IsLoggedIn())
             {
-                client.DefaultRequestHeaders.Authorization = 
+                client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", AuthManager.Token);
             }
 
@@ -44,16 +43,15 @@ namespace MyProject
         public static async Task<HttpResponseMessage> PutAsync(string endpoint, object? data)
         {
             client.DefaultRequestHeaders.Clear();
-            
+
             if (AuthManager.IsLoggedIn())
             {
-                client.DefaultRequestHeaders.Authorization = 
+                client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", AuthManager.Token);
             }
 
             if (data == null)
             {
-                // Send PUT request with empty JSON body
                 var emptyContent = new StringContent("{}", Encoding.UTF8, "application/json");
                 return await client.PutAsync($"{BaseUrl}/{endpoint}", emptyContent);
             }
@@ -67,10 +65,10 @@ namespace MyProject
         public static async Task<HttpResponseMessage> DeleteAsync(string endpoint)
         {
             client.DefaultRequestHeaders.Clear();
-            
+
             if (AuthManager.IsLoggedIn())
             {
-                client.DefaultRequestHeaders.Authorization = 
+                client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", AuthManager.Token);
             }
 
@@ -79,8 +77,14 @@ namespace MyProject
 
         public static bool IsUnauthorized(HttpResponseMessage response)
         {
-            return response.StatusCode == System.Net.HttpStatusCode.Unauthorized || 
-                   response.StatusCode == System.Net.HttpStatusCode.Forbidden;
+            return response.StatusCode == System.Net.HttpStatusCode.Unauthorized;
+        }
+
+        public static bool IsForbidden(HttpResponseMessage response)
+        {
+            return response.StatusCode == System.Net.HttpStatusCode.Forbidden;
         }
     }
 }
+
+

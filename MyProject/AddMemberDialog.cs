@@ -12,14 +12,9 @@ namespace MyProject
     public partial class AddMemberDialog : Form
     {
         private string projectId;
-        private TextBox? txtSearch;
-        private FlowLayoutPanel? flowUsers;
-        private FlowLayoutPanel? flowCurrentMembers;
-        private Label? lblInstruction;
-        private Label? lblCurrentMembersTitle;
-        private Button? btnClose;
         private List<UserSearchResult> availableUsers = new List<UserSearchResult>();
         private List<ProjectMember> currentMembers = new List<ProjectMember>();
+        private bool availableUsersLoaded = false;
 
         public bool MemberAdded { get; private set; }
         public bool MemberRemoved { get; private set; }
@@ -29,101 +24,7 @@ namespace MyProject
             this.projectId = projectId;
             InitializeComponent();
             LoadCurrentMembers();
-            LoadAvailableUsers();
-        }
-
-        private void InitializeComponent()
-        {
-            this.Text = "Quản Lý Thành Viên Dự Án";
-            this.Size = new Size(900, 650);
-            this.StartPosition = FormStartPosition.CenterParent;
-            this.FormBorderStyle = FormBorderStyle.FixedDialog;
-            this.MaximizeBox = false;
-            this.MinimizeBox = false;
-            this.BackColor = Color.White;
-
-            var lblTitle = new Label
-            {
-                Text = "Quản Lý Thành Viên Dự Án",
-                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
-                Location = new Point(30, 30),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            lblCurrentMembersTitle = new Label
-            {
-                Text = "Thành Viên Hiện Tại",
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location = new Point(30, 75),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            flowCurrentMembers = new FlowLayoutPanel
-            {
-                Location = new Point(30, 110),
-                Size = new Size(380, 180),
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                AutoScroll = true,
-                BackColor = Color.FromArgb(250, 250, 250),
-                Padding = new Padding(10)
-            };
-
-            var lblAvailableTitle = new Label
-            {
-                Text = "Thêm Thành Viên Mới",
-                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
-                Location = new Point(30, 310),
-                AutoSize = true,
-                ForeColor = Color.FromArgb(44, 62, 80)
-            };
-
-            txtSearch = new TextBox
-            {
-                Location = new Point(30, 345),
-                Size = new Size(380, 30),
-                Font = new Font("Segoe UI", 11F),
-                PlaceholderText = "Tìm kiếm người dùng..."
-            };
-            txtSearch.TextChanged += TxtSearch_TextChanged;
-
-            lblInstruction = new Label
-            {
-                Text = "Chọn người dùng đã thêm vào dự án này.",
-                Font = new Font("Segoe UI", 9F),
-                Location = new Point(30, 385),
-                Size = new Size(380, 20),
-                ForeColor = Color.Gray
-            };
-
-            flowUsers = new FlowLayoutPanel
-            {
-                Location = new Point(30, 415),
-                Size = new Size(380, 180),
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                AutoScroll = true,
-                BackColor = Color.FromArgb(250, 250, 250),
-                Padding = new Padding(10)
-            };
-
-            btnClose = new Button
-            {
-                Text = "Đóng",
-                Location = new Point(790, 605),
-                Size = new Size(80, 35),
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                BackColor = Color.FromArgb(149, 165, 166),
-                ForeColor = Color.White,
-                FlatStyle = FlatStyle.Flat,
-                Cursor = Cursors.Hand
-            };
-            btnClose.FlatAppearance.BorderSize = 0;
-            btnClose.Click += (s, e) => this.Close();
-
-            this.Controls.AddRange(new Control[] { lblTitle, lblCurrentMembersTitle, flowCurrentMembers, lblAvailableTitle, txtSearch, lblInstruction, flowUsers, btnClose });
+                        ShowSearchInstruction();
         }
 
         private async void LoadAvailableUsers()
@@ -131,11 +32,18 @@ namespace MyProject
             try
             {
                 var response = await ApiHelper.GetAsync($"projects/{projectId}/available-users");
-                
+
                 if (ApiHelper.IsUnauthorized(response))
                 {
                     MessageBox.Show("Phiên đăng nhập đã hết hạn!", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     AuthManager.Logout();
+                    this.Close();
+                    return;
+                }
+
+                if (ApiHelper.IsForbidden(response))
+                {
+                    MessageBox.Show("Bạn không có quyền thực hiện thao tác này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                     this.Close();
                     return;
                 }
@@ -150,7 +58,25 @@ namespace MyProject
                     });
 
                     availableUsers = result?.Data ?? new List<UserSearchResult>();
-                    DisplayUsers(availableUsers);
+                    availableUsersLoaded = true;
+
+                                        var searchText = txtSearch?.Text.Trim() ?? "";
+                    if (!string.IsNullOrEmpty(searchText))
+                    {
+                        var searchLower = searchText.ToLower();
+                        var filtered = availableUsers.Where(u =>
+                        {
+                            var userName = u.UserName?.ToLower() ?? "";
+                            var email = u.Email?.ToLower() ?? "";
+
+                                                        return userName == searchLower || email == searchLower;
+                        }).ToList();
+                        DisplayUsers(filtered);
+                    }
+                    else
+                    {
+                        DisplayUsers(availableUsers);
+                    }
                 }
                 else
                 {
@@ -181,19 +107,44 @@ namespace MyProject
 
         private void TxtSearch_TextChanged(object? sender, EventArgs e)
         {
-            var searchText = txtSearch?.Text.ToLower().Trim() ?? "";
+            var searchText = txtSearch?.Text.Trim() ?? "";
+
             if (string.IsNullOrEmpty(searchText))
             {
-                DisplayUsers(availableUsers);
+                                ShowSearchInstruction();
             }
             else
             {
-                var filtered = availableUsers.Where(u => 
-                    u.UserName.ToLower().Contains(searchText) || 
-                    u.Email.ToLower().Contains(searchText)
-                ).ToList();
+                                if (!availableUsersLoaded)
+                {
+                    LoadAvailableUsers();
+                    return;                 }
+
+                                var searchLower = searchText.ToLower();
+                var filtered = availableUsers.Where(u =>
+                {
+                    var userName = u.UserName?.ToLower() ?? "";
+                    var email = u.Email?.ToLower() ?? "";
+
+                                        return userName == searchLower || email == searchLower;
+                }).ToList();
                 DisplayUsers(filtered);
             }
+        }
+
+        private void ShowSearchInstruction()
+        {
+            flowUsers!.Controls.Clear();
+
+            var instructionLabel = new Label
+            {
+                Text = "Nhập tên hoặc email để tìm kiếm người dùng...",
+                Font = new Font("Segoe UI", 10F, FontStyle.Italic),
+                ForeColor = Color.Gray,
+                AutoSize = true,
+                Margin = new Padding(10)
+            };
+            flowUsers.Controls.Add(instructionLabel);
         }
 
         private void DisplayUsers(List<UserSearchResult> users)
@@ -258,10 +209,10 @@ namespace MyProject
 
             var lblInitial = new Label
             {
-                Text = GetInitials(user.UserName),
+                Text = GetInitials(user.UserName ?? "?"),
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = GetRandomColor(user.UserId),
+                BackColor = GetRandomColor(user.UserId ?? "default"),
                 Size = new Size(40, 40),
                 Location = new Point(10, 10),
                 TextAlign = ContentAlignment.MiddleCenter
@@ -278,7 +229,7 @@ namespace MyProject
 
             var lblName = new Label
             {
-                Text = user.UserName,
+                Text = user.UserName ?? "Unknown",
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 Location = new Point(60, 12),
                 AutoSize = true,
@@ -287,7 +238,7 @@ namespace MyProject
 
             var lblEmail = new Label
             {
-                Text = user.Email,
+                Text = user.Email ?? "",
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(60, 32),
                 AutoSize = true,
@@ -333,10 +284,10 @@ namespace MyProject
 
             var lblInitial = new Label
             {
-                Text = GetInitials(member.UserName),
+                Text = GetInitials(member.UserName ?? "?"),
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 ForeColor = Color.White,
-                BackColor = GetRandomColor(member.UserID),
+                BackColor = GetRandomColor(member.UserID ?? "default"),
                 Size = new Size(40, 40),
                 Location = new Point(10, 10),
                 TextAlign = ContentAlignment.MiddleCenter
@@ -353,7 +304,7 @@ namespace MyProject
 
             var lblName = new Label
             {
-                Text = member.UserName,
+                Text = member.UserName ?? "Unknown",
                 Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                 Location = new Point(60, 12),
                 AutoSize = true,
@@ -362,7 +313,7 @@ namespace MyProject
 
             var lblEmail = new Label
             {
-                Text = member.Email,
+                Text = member.Email ?? "",
                 Font = new Font("Segoe UI", 9F),
                 Location = new Point(60, 32),
                 AutoSize = true,
@@ -371,7 +322,7 @@ namespace MyProject
 
             var btnRemove = new Button
             {
-                Text = "x Gỡ",
+                Text = "× Gỡ",
                 Size = new Size(60, 30),
                 Location = new Point(260, 15),
                 Font = new Font("Segoe UI", 9F, FontStyle.Bold),
@@ -419,15 +370,23 @@ namespace MyProject
                     return;
                 }
 
+                if (ApiHelper.IsForbidden(response))
+                {
+                    MessageBox.Show("Bạn không có quyền thực hiện thao tác này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    btnAdd.Enabled = true;
+                    btnAdd.Text = "Thêm";
+                    return;
+                }
+
                 var responseContent = await response.Content.ReadAsStringAsync();
 
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show($"Đã thêm {user.UserName} vào dự án!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     MemberAdded = true;
-                    
-                    availableUsers.Remove(user);
-                    DisplayUsers(availableUsers);
+
+                                        availableUsersLoaded = false;
+                    LoadAvailableUsers();
                     LoadCurrentMembers();
                 }
                 else
@@ -472,14 +431,21 @@ namespace MyProject
                     return;
                 }
 
+                if (ApiHelper.IsForbidden(response))
+                {
+                    MessageBox.Show("Bạn không có quyền thực hiện thao tác này.", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show($"Đã gỡ {member.UserName} khỏi dự án!", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     MemberRemoved = true;
-                    
+
                     currentMembers.Remove(member);
                     DisplayCurrentMembers();
-                    
+
+                                        availableUsersLoaded = false;
                     LoadAvailableUsers();
                 }
                 else
@@ -530,7 +496,7 @@ namespace MyProject
             return path;
         }
 
-        public class AvailableUsersResponse
+                public class AvailableUsersResponse
         {
             public string? Message { get; set; }
             public int Count { get; set; }
@@ -565,3 +531,5 @@ namespace MyProject
         }
     }
 }
+
+
