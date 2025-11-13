@@ -2,6 +2,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace MyProject
 {
@@ -11,6 +12,7 @@ namespace MyProject
         private string currentUserId;
         private bool isTaskNamePlaceholder = true;
         private bool isDescriptionPlaceholder = true;
+        private List<ProjectMember> projectMembers = new List<ProjectMember>();
 
         public bool IsSuccess { get; private set; }
 
@@ -19,6 +21,7 @@ namespace MyProject
             InitializeComponent();
             this.projectId = projectId;
             this.currentUserId = userId;
+            LoadProjectMembers();
             InitializeForm();
         }
 
@@ -117,6 +120,23 @@ namespace MyProject
 
             try
             {
+                // Determine assigned user ID
+                string assignedUserId = currentUserId; // Default to creator
+
+                if (cboAssignTo != null && cboAssignTo.SelectedIndex >= 0)
+                {
+                    if (cboAssignTo.SelectedIndex == 1) // "Không giao"
+                    {
+                        assignedUserId = null;
+                    }
+                    else if (cboAssignTo.SelectedIndex > 1) // Specific member
+                    {
+                        var selectedMember = projectMembers[cboAssignTo.SelectedIndex - 2];
+                        assignedUserId = selectedMember.UserID;
+                    }
+                    // Index 0 = "Tự động (Tôi)" = currentUserId (already set)
+                }
+
                 var taskData = new
                 {
                     ProjectID = projectId,
@@ -125,7 +145,7 @@ namespace MyProject
                     DueDate = dtpDueDate.Value.ToString("yyyy-MM-dd"),
                     Priority = cboPriority.SelectedItem.ToString(),
                     Status = cboStatus.SelectedItem.ToString(),
-                    AssignedToUserID = currentUserId
+                    AssignedToUserID = assignedUserId
                 };
 
                 var response = await ApiHelper.PostAsync("tasks", taskData);
@@ -189,6 +209,48 @@ namespace MyProject
         {
             this.DialogResult = DialogResult.Cancel;
             this.Close();
+        }
+
+        private async void LoadProjectMembers()
+        {
+            try
+            {
+                var response = await ApiHelper.GetAsync($"projects/{projectId}/members");
+                if (!response.IsSuccessStatusCode) return;
+
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<MembersResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                projectMembers = result?.Members ?? new List<ProjectMember>();
+                
+                // Populate cboAssignTo if it exists
+                if (cboAssignTo != null)
+                {
+                    cboAssignTo.Items.Clear();
+                    cboAssignTo.Items.Add("-- Tự động (Tôi) --");
+                    cboAssignTo.Items.Add("-- Không giao --");
+                    
+                    foreach (var member in projectMembers)
+                    {
+                        cboAssignTo.Items.Add(member.UserName);
+                    }
+                    
+                    cboAssignTo.SelectedIndex = 0; // Default to "Tự động (Tôi)"
+                }
+            }
+            catch { }
+        }
+
+        public class ProjectMember
+        {
+            public string UserID { get; set; }
+            public string UserName { get; set; }
+            public string Email { get; set; }
+        }
+
+        public class MembersResponse
+        {
+            public List<ProjectMember> Members { get; set; }
         }
 
         public class TaskApiResponse

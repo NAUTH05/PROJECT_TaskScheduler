@@ -41,7 +41,7 @@ namespace MyProject
             return await client.PostAsync($"{BaseUrl}/{endpoint}", content);
         }
 
-        public static async Task<HttpResponseMessage> PutAsync(string endpoint, object data)
+        public static async Task<HttpResponseMessage> PutAsync(string endpoint, object? data)
         {
             client.DefaultRequestHeaders.Clear();
             
@@ -49,6 +49,13 @@ namespace MyProject
             {
                 client.DefaultRequestHeaders.Authorization = 
                     new AuthenticationHeaderValue("Bearer", AuthManager.Token);
+            }
+
+            if (data == null)
+            {
+                // Send PUT request with empty JSON body
+                var emptyContent = new StringContent("{}", Encoding.UTF8, "application/json");
+                return await client.PutAsync($"{BaseUrl}/{endpoint}", emptyContent);
             }
 
             var json = JsonSerializer.Serialize(data);

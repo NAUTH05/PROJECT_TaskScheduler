@@ -6,333 +6,332 @@
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing && (components != null))
-            {
-                components.Dispose();
-            }
+            if (disposing && (components != null)) components.Dispose();
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+        private System.Windows.Forms.Label lblHeader;
+        private System.Windows.Forms.Label lblSubHeader;
+        private System.Windows.Forms.Label lblUserIdDisplay;
+        private System.Windows.Forms.Button btnBack;
+        private System.Windows.Forms.Panel panelProjectInfo;
+        private System.Windows.Forms.Label lblProjectTitle;
+        private System.Windows.Forms.Label lblProjectDescription;
+        private System.Windows.Forms.Label lblProjectDeadline;
+        private System.Windows.Forms.Label lblMembersList;
+        private System.Windows.Forms.ComboBox cboProjectStatus;
+        private System.Windows.Forms.Button btnAddMember;
+        private System.Windows.Forms.Button btnAddTask;
+        private System.Windows.Forms.DataGridView dgvTasks;
+        private System.Windows.Forms.Label lblComments;
+        private System.Windows.Forms.FlowLayoutPanel flowComments;
+        private System.Windows.Forms.TextBox txtNewComment;
+        private System.Windows.Forms.Button btnSendComment;
 
         private void InitializeComponent()
         {
-            panelHeader = new Panel();
-            lblUserAvatar = new Label();
-            lblUserName = new Label();
-            lblDashboardTitle = new Label();
+            lblHeader = new Label();
+            lblSubHeader = new Label();
+            lblUserIdDisplay = new Label();
             btnBack = new Button();
             panelProjectInfo = new Panel();
-            cboProjectStatus = new ComboBox();
-            lblProjectName = new Label();
-            lblProjectDeadline = new Label();
+            lblProjectTitle = new Label();
             lblProjectDescription = new Label();
-            lblTasksHeader = new Label();
+            lblProjectDeadline = new Label();
+            lblMembersList = new Label();
+            cboProjectStatus = new ComboBox();
+            btnAddMember = new Button();
             btnAddTask = new Button();
-            panelToDo = new Panel();
-            lblToDo = new Label();
-            flowToDoTasks = new FlowLayoutPanel();
-            panelInProgress = new Panel();
-            lblInProgress = new Label();
-            flowInProgressTasks = new FlowLayoutPanel();
-            panelDone = new Panel();
-            lblDone = new Label();
-            flowDoneTasks = new FlowLayoutPanel();
-            panelHeader.SuspendLayout();
+            dgvTasks = new DataGridView();
+            lblComments = new Label();
+            flowComments = new FlowLayoutPanel();
+            txtNewComment = new TextBox();
+            btnSendComment = new Button();
+            dataGridViewTextBoxColumn1 = new DataGridViewTextBoxColumn();
+            dataGridViewTextBoxColumn2 = new DataGridViewTextBoxColumn();
+            dataGridViewTextBoxColumn3 = new DataGridViewTextBoxColumn();
+            dataGridViewTextBoxColumn4 = new DataGridViewTextBoxColumn();
+            dataGridViewTextBoxColumn5 = new DataGridViewTextBoxColumn();
+            dataGridViewTextBoxColumn7 = new DataGridViewTextBoxColumn();
             panelProjectInfo.SuspendLayout();
-            panelToDo.SuspendLayout();
-            panelInProgress.SuspendLayout();
-            panelDone.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)dgvTasks).BeginInit();
             SuspendLayout();
             // 
-            // panelHeader
+            // lblHeader
             // 
-            panelHeader.BackColor = Color.White;
-            panelHeader.Controls.Add(lblUserAvatar);
-            panelHeader.Controls.Add(lblUserName);
-            panelHeader.Controls.Add(lblDashboardTitle);
-            panelHeader.Dock = DockStyle.Top;
-            panelHeader.Location = new Point(0, 0);
-            panelHeader.Name = "panelHeader";
-            panelHeader.Size = new Size(1200, 80);
-            panelHeader.TabIndex = 0;
+            lblHeader.AutoSize = true;
+            lblHeader.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
+            lblHeader.Location = new Point(30, 20);
+            lblHeader.Name = "lblHeader";
+            lblHeader.Size = new Size(229, 32);
+            lblHeader.TabIndex = 0;
+            lblHeader.Text = "Task Scheduler Pro";
             // 
-            // lblUserAvatar
+            // lblSubHeader
             // 
-            lblUserAvatar.BackColor = Color.FromArgb(88, 86, 214);
-            lblUserAvatar.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lblUserAvatar.ForeColor = Color.White;
-            lblUserAvatar.Location = new Point(1130, 20);
-            lblUserAvatar.Name = "lblUserAvatar";
-            lblUserAvatar.Size = new Size(50, 50);
-            lblUserAvatar.TabIndex = 2;
-            lblUserAvatar.Text = "MU";
-            lblUserAvatar.TextAlign = ContentAlignment.MiddleCenter;
+            lblSubHeader.AutoSize = true;
+            lblSubHeader.Font = new Font("Segoe UI", 10F);
+            lblSubHeader.ForeColor = Color.Gray;
+            lblSubHeader.Location = new Point(30, 55);
+            lblSubHeader.Name = "lblSubHeader";
+            lblSubHeader.Size = new Size(232, 19);
+            lblSubHeader.TabIndex = 1;
+            lblSubHeader.Text = "Quản lý dự án và công việc hiệu quả";
             // 
-            // lblUserName
+            // lblUserIdDisplay
             // 
-            lblUserName.AutoSize = true;
-            lblUserName.Font = new Font("Segoe UI", 10F);
-            lblUserName.ForeColor = Color.Gray;
-            lblUserName.Location = new Point(980, 35);
-            lblUserName.Name = "lblUserName";
-            lblUserName.Size = new Size(154, 19);
-            lblUserName.TabIndex = 1;
-            lblUserName.Text = "Chào mừng, Mock User";
-            // 
-            // lblDashboardTitle
-            // 
-            lblDashboardTitle.AutoSize = true;
-            lblDashboardTitle.Font = new Font("Segoe UI", 20F, FontStyle.Bold);
-            lblDashboardTitle.ForeColor = Color.FromArgb(88, 86, 214);
-            lblDashboardTitle.Location = new Point(30, 25);
-            lblDashboardTitle.Name = "lblDashboardTitle";
-            lblDashboardTitle.Size = new Size(346, 37);
-            lblDashboardTitle.TabIndex = 0;
-            lblDashboardTitle.Text = "TaskScheduler Dashboard";
+            lblUserIdDisplay.AutoSize = true;
+            lblUserIdDisplay.Font = new Font("Segoe UI", 9F);
+            lblUserIdDisplay.ForeColor = Color.Gray;
+            lblUserIdDisplay.Location = new Point(1200, 30);
+            lblUserIdDisplay.Name = "lblUserIdDisplay";
+            lblUserIdDisplay.Size = new Size(59, 15);
+            lblUserIdDisplay.TabIndex = 2;
+            lblUserIdDisplay.Text = "User ID: ...";
             // 
             // btnBack
             // 
-            btnBack.BackColor = Color.Transparent;
             btnBack.Cursor = Cursors.Hand;
             btnBack.FlatAppearance.BorderSize = 0;
             btnBack.FlatStyle = FlatStyle.Flat;
-            btnBack.Font = new Font("Segoe UI", 11F);
+            btnBack.Font = new Font("Segoe UI", 10F);
             btnBack.ForeColor = Color.FromArgb(88, 86, 214);
-            btnBack.Location = new Point(30, 100);
+            btnBack.Location = new Point(30, 90);
             btnBack.Name = "btnBack";
-            btnBack.Size = new Size(200, 35);
-            btnBack.TabIndex = 1;
-            btnBack.Text = "← Quay lại Dashboard";
-            btnBack.TextAlign = ContentAlignment.MiddleLeft;
-            btnBack.UseVisualStyleBackColor = false;
+            btnBack.Size = new Size(200, 30);
+            btnBack.TabIndex = 3;
+            btnBack.Text = "<- Quay lại Dashboard";
             btnBack.Click += btnBack_Click;
             // 
             // panelProjectInfo
             // 
             panelProjectInfo.BackColor = Color.White;
-            panelProjectInfo.Controls.Add(cboProjectStatus);
-            panelProjectInfo.Controls.Add(lblProjectName);
-            panelProjectInfo.Controls.Add(lblProjectDeadline);
+            panelProjectInfo.Controls.Add(lblProjectTitle);
             panelProjectInfo.Controls.Add(lblProjectDescription);
-            panelProjectInfo.Location = new Point(40, 155);
+            panelProjectInfo.Controls.Add(lblProjectDeadline);
+            panelProjectInfo.Controls.Add(lblMembersList);
+            panelProjectInfo.Controls.Add(cboProjectStatus);
+            panelProjectInfo.Controls.Add(btnAddMember);
+            panelProjectInfo.Location = new Point(30, 140);
             panelProjectInfo.Name = "panelProjectInfo";
-            panelProjectInfo.Size = new Size(1120, 180);
-            panelProjectInfo.TabIndex = 2;
+            panelProjectInfo.Size = new Size(1340, 130);
+            panelProjectInfo.TabIndex = 4;
             // 
-            // cboProjectStatus
+            // lblProjectTitle
             // 
-            cboProjectStatus.DropDownStyle = ComboBoxStyle.DropDownList;
-            cboProjectStatus.Font = new Font("Segoe UI", 10F);
-            cboProjectStatus.FormattingEnabled = true;
-            cboProjectStatus.Items.AddRange(new object[] { "To Do", "In Progress", "Completed" });
-            cboProjectStatus.Location = new Point(955, 25);
-            cboProjectStatus.Name = "cboProjectStatus";
-            cboProjectStatus.Size = new Size(140, 25);
-            cboProjectStatus.TabIndex = 3;
-            cboProjectStatus.SelectedIndexChanged += cboProjectStatus_SelectedIndexChanged;
-            // 
-            // lblProjectName
-            // 
-            lblProjectName.AutoSize = true;
-            lblProjectName.Font = new Font("Segoe UI", 18F, FontStyle.Bold);
-            lblProjectName.Location = new Point(25, 20);
-            lblProjectName.Name = "lblProjectName";
-            lblProjectName.Size = new Size(397, 32);
-            lblProjectName.TabIndex = 0;
-            lblProjectName.Text = "Phát triển TaskScheduler Backend";
-            // 
-            // lblProjectDeadline
-            // 
-            lblProjectDeadline.AutoSize = true;
-            lblProjectDeadline.Font = new Font("Segoe UI", 10F);
-            lblProjectDeadline.ForeColor = Color.Gray;
-            lblProjectDeadline.Location = new Point(25, 65);
-            lblProjectDeadline.Name = "lblProjectDeadline";
-            lblProjectDeadline.Size = new Size(225, 19);
-            lblProjectDeadline.TabIndex = 1;
-            lblProjectDeadline.Text = "Ngày kết thúc dự kiến: 30/11/2025";
+            lblProjectTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            lblProjectTitle.Location = new Point(20, 20);
+            lblProjectTitle.Name = "lblProjectTitle";
+            lblProjectTitle.Size = new Size(800, 30);
+            lblProjectTitle.TabIndex = 0;
+            lblProjectTitle.Text = "Tên Dự Án";
             // 
             // lblProjectDescription
             // 
             lblProjectDescription.Font = new Font("Segoe UI", 10F);
-            lblProjectDescription.Location = new Point(25, 100);
+            lblProjectDescription.ForeColor = Color.Gray;
+            lblProjectDescription.Location = new Point(20, 55);
             lblProjectDescription.Name = "lblProjectDescription";
-            lblProjectDescription.Size = new Size(1070, 60);
-            lblProjectDescription.TabIndex = 2;
-            lblProjectDescription.Text = "Thiết lập API và Database, đảm bảo tính năng xác thực và lưu trữ dữ liệu an toàn.";
+            lblProjectDescription.Size = new Size(1000, 20);
+            lblProjectDescription.TabIndex = 1;
+            lblProjectDescription.Text = "Mô tả dự án";
             // 
-            // lblTasksHeader
+            // lblProjectDeadline
             // 
-            lblTasksHeader.AutoSize = true;
-            lblTasksHeader.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            lblTasksHeader.Location = new Point(35, 360);
-            lblTasksHeader.Name = "lblTasksHeader";
-            lblTasksHeader.Size = new Size(331, 25);
-            lblTasksHeader.TabIndex = 3;
-            lblTasksHeader.Text = "Danh Sách Nhiệm Vụ (Project Tasks)";
+            lblProjectDeadline.AutoSize = true;
+            lblProjectDeadline.Font = new Font("Segoe UI", 9F);
+            lblProjectDeadline.Location = new Point(20, 85);
+            lblProjectDeadline.Name = "lblProjectDeadline";
+            lblProjectDeadline.Size = new Size(96, 15);
+            lblProjectDeadline.TabIndex = 2;
+            lblProjectDeadline.Text = "Ngày kết thúc: ...";
+            // 
+            // lblMembersList
+            // 
+            lblMembersList.Font = new Font("Segoe UI", 9F);
+            lblMembersList.Location = new Point(200, 85);
+            lblMembersList.Name = "lblMembersList";
+            lblMembersList.Size = new Size(800, 20);
+            lblMembersList.TabIndex = 3;
+            lblMembersList.Text = "Thành viên: ...";
+            // 
+            // cboProjectStatus
+            // 
+            cboProjectStatus.BackColor = Color.FromArgb(52, 152, 219);
+            cboProjectStatus.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboProjectStatus.Font = new Font("Segoe UI", 10F);
+            cboProjectStatus.ForeColor = Color.White;
+            cboProjectStatus.Items.AddRange(new object[] { "Planning", "Active", "In Progress", "On Hold", "Completed", "Cancelled" });
+            cboProjectStatus.Location = new Point(1050, 20);
+            cboProjectStatus.Name = "cboProjectStatus";
+            cboProjectStatus.Size = new Size(130, 25);
+            cboProjectStatus.TabIndex = 4;
+            cboProjectStatus.SelectedIndexChanged += cboProjectStatus_SelectedIndexChanged;
+            // 
+            // btnAddMember
+            // 
+            btnAddMember.BackColor = Color.FromArgb(46, 204, 113);
+            btnAddMember.Cursor = Cursors.Hand;
+            btnAddMember.FlatAppearance.BorderSize = 0;
+            btnAddMember.FlatStyle = FlatStyle.Flat;
+            btnAddMember.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnAddMember.ForeColor = Color.White;
+            btnAddMember.Location = new Point(1190, 20);
+            btnAddMember.Name = "btnAddMember";
+            btnAddMember.Size = new Size(130, 32);
+            btnAddMember.TabIndex = 5;
+            btnAddMember.Text = "+ Thêm Thành Viên";
+            btnAddMember.UseVisualStyleBackColor = false;
+            btnAddMember.Click += btnAddMember_Click;
             // 
             // btnAddTask
             // 
-            btnAddTask.BackColor = Color.FromArgb(46, 204, 113);
+            btnAddTask.BackColor = Color.FromArgb(88, 86, 214);
             btnAddTask.Cursor = Cursors.Hand;
             btnAddTask.FlatAppearance.BorderSize = 0;
             btnAddTask.FlatStyle = FlatStyle.Flat;
-            btnAddTask.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            btnAddTask.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
             btnAddTask.ForeColor = Color.White;
-            btnAddTask.Location = new Point(1015, 355);
+            btnAddTask.Location = new Point(1240, 285);
             btnAddTask.Name = "btnAddTask";
-            btnAddTask.Size = new Size(145, 35);
-            btnAddTask.TabIndex = 4;
+            btnAddTask.Size = new Size(130, 35);
+            btnAddTask.TabIndex = 5;
             btnAddTask.Text = "+ Nhiệm Vụ Mới";
             btnAddTask.UseVisualStyleBackColor = false;
             btnAddTask.Click += btnAddTask_Click;
             // 
-            // panelToDo
+            // dgvTasks
             // 
-            panelToDo.BackColor = Color.FromArgb(255, 240, 240);
-            panelToDo.Controls.Add(lblToDo);
-            panelToDo.Controls.Add(flowToDoTasks);
-            panelToDo.Location = new Point(40, 410);
-            panelToDo.Name = "panelToDo";
-            panelToDo.Size = new Size(360, 360);
-            panelToDo.TabIndex = 5;
+            dgvTasks.AllowUserToAddRows = false;
+            dgvTasks.AllowUserToDeleteRows = false;
+            dgvTasks.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvTasks.BackgroundColor = Color.White;
+            dgvTasks.BorderStyle = BorderStyle.None;
+            dgvTasks.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvTasks.Columns.AddRange(new DataGridViewColumn[] { dataGridViewTextBoxColumn1, dataGridViewTextBoxColumn2, dataGridViewTextBoxColumn3, dataGridViewTextBoxColumn4, dataGridViewTextBoxColumn5, dataGridViewTextBoxColumn7 });
+            dgvTasks.Location = new Point(30, 330);
+            dgvTasks.Name = "dgvTasks";
+            dgvTasks.ReadOnly = true;
+            dgvTasks.RowHeadersVisible = false;
+            dgvTasks.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvTasks.Size = new Size(1340, 300);
+            dgvTasks.TabIndex = 6;
             // 
-            // lblToDo
+            // lblComments
             // 
-            lblToDo.BackColor = Color.Transparent;
-            lblToDo.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lblToDo.ForeColor = Color.FromArgb(231, 76, 60);
-            lblToDo.Location = new Point(15, 15);
-            lblToDo.Name = "lblToDo";
-            lblToDo.Size = new Size(330, 25);
-            lblToDo.TabIndex = 0;
-            lblToDo.Text = "Chờ Làm (To Do)";
+            lblComments.AutoSize = true;
+            lblComments.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
+            lblComments.Location = new Point(30, 650);
+            lblComments.Name = "lblComments";
+            lblComments.Size = new Size(138, 21);
+            lblComments.TabIndex = 7;
+            lblComments.Text = "Bình Luận Dự Án";
             // 
-            // flowToDoTasks
+            // flowComments
             // 
-            flowToDoTasks.AutoScroll = true;
-            flowToDoTasks.FlowDirection = FlowDirection.TopDown;
-            flowToDoTasks.Location = new Point(15, 50);
-            flowToDoTasks.Name = "flowToDoTasks";
-            flowToDoTasks.Size = new Size(330, 295);
-            flowToDoTasks.TabIndex = 1;
-            flowToDoTasks.WrapContents = false;
+            flowComments.AutoScroll = true;
+            flowComments.BackColor = Color.FromArgb(250, 250, 250);
+            flowComments.FlowDirection = FlowDirection.TopDown;
+            flowComments.Location = new Point(30, 685);
+            flowComments.Name = "flowComments";
+            flowComments.Size = new Size(1340, 100);
+            flowComments.TabIndex = 8;
+            flowComments.WrapContents = false;
             // 
-            // panelInProgress
+            // txtNewComment
             // 
-            panelInProgress.BackColor = Color.FromArgb(255, 250, 220);
-            panelInProgress.Controls.Add(lblInProgress);
-            panelInProgress.Controls.Add(flowInProgressTasks);
-            panelInProgress.Location = new Point(420, 410);
-            panelInProgress.Name = "panelInProgress";
-            panelInProgress.Size = new Size(360, 360);
-            panelInProgress.TabIndex = 6;
+            txtNewComment.Font = new Font("Segoe UI", 10F);
+            txtNewComment.Location = new Point(30, 800);
+            txtNewComment.Name = "txtNewComment";
+            txtNewComment.PlaceholderText = "Thêm bình luận hoặc liên kết...";
+            txtNewComment.Size = new Size(1260, 25);
+            txtNewComment.TabIndex = 9;
             // 
-            // lblInProgress
+            // btnSendComment
             // 
-            lblInProgress.BackColor = Color.Transparent;
-            lblInProgress.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lblInProgress.ForeColor = Color.FromArgb(241, 196, 15);
-            lblInProgress.Location = new Point(15, 15);
-            lblInProgress.Name = "lblInProgress";
-            lblInProgress.Size = new Size(330, 25);
-            lblInProgress.TabIndex = 0;
-            lblInProgress.Text = "Đang Tiến Hành (In Progress)";
+            btnSendComment.BackColor = Color.FromArgb(88, 86, 214);
+            btnSendComment.Cursor = Cursors.Hand;
+            btnSendComment.FlatAppearance.BorderSize = 0;
+            btnSendComment.FlatStyle = FlatStyle.Flat;
+            btnSendComment.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+            btnSendComment.ForeColor = Color.White;
+            btnSendComment.Location = new Point(1300, 800);
+            btnSendComment.Name = "btnSendComment";
+            btnSendComment.Size = new Size(70, 30);
+            btnSendComment.TabIndex = 10;
+            btnSendComment.Text = "Bình Luận";
+            btnSendComment.UseVisualStyleBackColor = false;
+            btnSendComment.Click += btnSendComment_Click;
             // 
-            // flowInProgressTasks
+            // dataGridViewTextBoxColumn1
             // 
-            flowInProgressTasks.AutoScroll = true;
-            flowInProgressTasks.FlowDirection = FlowDirection.TopDown;
-            flowInProgressTasks.Location = new Point(15, 50);
-            flowInProgressTasks.Name = "flowInProgressTasks";
-            flowInProgressTasks.Size = new Size(330, 295);
-            flowInProgressTasks.TabIndex = 1;
-            flowInProgressTasks.WrapContents = false;
+            dataGridViewTextBoxColumn1.HeaderText = "TÊN TASK";
+            dataGridViewTextBoxColumn1.Name = "dataGridViewTextBoxColumn1";
+            dataGridViewTextBoxColumn1.ReadOnly = true;
             // 
-            // panelDone
+            // dataGridViewTextBoxColumn2
             // 
-            panelDone.BackColor = Color.FromArgb(230, 255, 240);
-            panelDone.Controls.Add(lblDone);
-            panelDone.Controls.Add(flowDoneTasks);
-            panelDone.Location = new Point(800, 410);
-            panelDone.Name = "panelDone";
-            panelDone.Size = new Size(360, 360);
-            panelDone.TabIndex = 7;
+            dataGridViewTextBoxColumn2.HeaderText = "TRẠNG THÁI";
+            dataGridViewTextBoxColumn2.Name = "dataGridViewTextBoxColumn2";
+            dataGridViewTextBoxColumn2.ReadOnly = true;
             // 
-            // lblDone
+            // dataGridViewTextBoxColumn3
             // 
-            lblDone.BackColor = Color.Transparent;
-            lblDone.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
-            lblDone.ForeColor = Color.FromArgb(46, 204, 113);
-            lblDone.Location = new Point(15, 15);
-            lblDone.Name = "lblDone";
-            lblDone.Size = new Size(330, 25);
-            lblDone.TabIndex = 0;
-            lblDone.Text = "Hoàn Thành (Done)";
+            dataGridViewTextBoxColumn3.HeaderText = "NGƯỢC ĐƯỢC GIAO";
+            dataGridViewTextBoxColumn3.Name = "dataGridViewTextBoxColumn3";
+            dataGridViewTextBoxColumn3.ReadOnly = true;
             // 
-            // flowDoneTasks
+            // dataGridViewTextBoxColumn4
             // 
-            flowDoneTasks.AutoScroll = true;
-            flowDoneTasks.FlowDirection = FlowDirection.TopDown;
-            flowDoneTasks.Location = new Point(15, 50);
-            flowDoneTasks.Name = "flowDoneTasks";
-            flowDoneTasks.Size = new Size(330, 295);
-            flowDoneTasks.TabIndex = 1;
-            flowDoneTasks.WrapContents = false;
+            dataGridViewTextBoxColumn4.HeaderText = "NGÀY KẾT THÚC";
+            dataGridViewTextBoxColumn4.Name = "dataGridViewTextBoxColumn4";
+            dataGridViewTextBoxColumn4.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn5
+            // 
+            dataGridViewTextBoxColumn5.HeaderText = "ƯU TIÊN";
+            dataGridViewTextBoxColumn5.Name = "dataGridViewTextBoxColumn5";
+            dataGridViewTextBoxColumn5.ReadOnly = true;
+            // 
+            // dataGridViewTextBoxColumn7
+            // 
+            dataGridViewTextBoxColumn7.HeaderText = "MÔ TẢ";
+            dataGridViewTextBoxColumn7.Name = "dataGridViewTextBoxColumn7";
+            dataGridViewTextBoxColumn7.ReadOnly = true;
             // 
             // ProjectView
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            BackColor = Color.FromArgb(240, 240, 240);
-            ClientSize = new Size(1200, 800);
-            Controls.Add(panelDone);
-            Controls.Add(panelInProgress);
-            Controls.Add(panelToDo);
-            Controls.Add(btnAddTask);
-            Controls.Add(lblTasksHeader);
-            Controls.Add(panelProjectInfo);
+            BackColor = Color.FromArgb(245, 245, 245);
+            ClientSize = new Size(1400, 900);
+            Controls.Add(lblHeader);
+            Controls.Add(lblSubHeader);
+            Controls.Add(lblUserIdDisplay);
             Controls.Add(btnBack);
-            Controls.Add(panelHeader);
+            Controls.Add(panelProjectInfo);
+            Controls.Add(btnAddTask);
+            Controls.Add(dgvTasks);
+            Controls.Add(lblComments);
+            Controls.Add(flowComments);
+            Controls.Add(txtNewComment);
+            Controls.Add(btnSendComment);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             Name = "ProjectView";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Chi Tiết Dự Án";
-            panelHeader.ResumeLayout(false);
-            panelHeader.PerformLayout();
             panelProjectInfo.ResumeLayout(false);
             panelProjectInfo.PerformLayout();
-            panelToDo.ResumeLayout(false);
-            panelInProgress.ResumeLayout(false);
-            panelDone.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)dgvTasks).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
-
-        #endregion
-
-        private System.Windows.Forms.Panel panelHeader;
-        private System.Windows.Forms.Label lblUserAvatar;
-        private System.Windows.Forms.Label lblUserName;
-        private System.Windows.Forms.Label lblDashboardTitle;
-        private System.Windows.Forms.Button btnBack;
-        private System.Windows.Forms.Panel panelProjectInfo;
-        private System.Windows.Forms.ComboBox cboProjectStatus;
-        private System.Windows.Forms.Label lblProjectName;
-        private System.Windows.Forms.Label lblProjectDeadline;
-        private System.Windows.Forms.Label lblProjectDescription;
-        private System.Windows.Forms.Label lblTasksHeader;
-        private System.Windows.Forms.Button btnAddTask;
-        private System.Windows.Forms.Panel panelToDo;
-        private System.Windows.Forms.Label lblToDo;
-        private System.Windows.Forms.FlowLayoutPanel flowToDoTasks;
-        private System.Windows.Forms.Panel panelInProgress;
-        private System.Windows.Forms.Label lblInProgress;
-        private System.Windows.Forms.FlowLayoutPanel flowInProgressTasks;
-        private System.Windows.Forms.Panel panelDone;
-        private System.Windows.Forms.Label lblDone;
-        private System.Windows.Forms.FlowLayoutPanel flowDoneTasks;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn1;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn2;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn3;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn4;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn5;
+        private DataGridViewTextBoxColumn dataGridViewTextBoxColumn7;
     }
 }

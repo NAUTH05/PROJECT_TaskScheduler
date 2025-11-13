@@ -110,7 +110,7 @@
             cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
             cboStatus.Font = new Font("Segoe UI", 11F);
             cboStatus.FormattingEnabled = true;
-            cboStatus.Items.AddRange(new object[] { "Đang Tiến Hành (In Progress)", "Chờ Làm (To Do)", "Hoàn Thành (Completed)" });
+            cboStatus.Items.AddRange(new object[] { "📋 Planning", "🚀 Active", "⚡ In Progress", "⏸️ On Hold", "✅ Completed", "❌ Cancelled" });
             cboStatus.Location = new Point(30, 395);
             cboStatus.Name = "cboStatus";
             cboStatus.Size = new Size(460, 28);

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -15,525 +14,176 @@ namespace MyProject
         private string projectId;
         private string currentUserId;
         private string currentUserName;
-        private bool isLoadingStatus = false;
         private bool hasChanges = false;
+        private bool isLoadingData = true;  // ADD THIS FLAG
 
-        public class TaskItem
-        {
-            [System.Text.Json.Serialization.JsonPropertyName("TaskID")]
-            public string TaskID { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("ProjectID")]
-            public string ProjectID { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("TaskName")]
-            public string TaskName { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("TaskDescription")]
-            public string TaskDescription { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("DueDate")]
-            public string DueDate { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("Priority")]
-            public string Priority { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("Status")]
-            public string Status { get; set; }
-
-            [System.Text.Json.Serialization.JsonPropertyName("AssignedToUserID")]
-            public string AssignedToUserID { get; set; }
-        }
-
-        public class TasksApiResponse
-        {
-            public string Message { get; set; }
-            public int Count { get; set; }
-            public List<string> TaskIds { get; set; }
-            public List<TaskItem> Data { get; set; }
-        }
-
-        public class TaskApiResponse
-        {
-            public string Message { get; set; }
-            public string TaskId { get; set; }
-            public TaskItem Data { get; set; }
-        }
+        private List<TaskItem> currentTasks = new List<TaskItem>();
+        private List<ProjectMember> projectMembers = new List<ProjectMember>();
 
         public ProjectView(string projectId, string projectName, string projectDescription,
                           string endDate, string status, string userId, string userName)
         {
-            InitializeComponent();
-
             this.projectId = projectId;
             this.currentUserId = userId;
             this.currentUserName = userName;
 
-            lblProjectName.Text = projectName;
+            InitializeComponent();
+
+            lblProjectTitle.Text = projectName;
             lblProjectDescription.Text = projectDescription;
-            lblProjectDeadline.Text = $"Ngày kết thúc dự kiến: {endDate}";
+            lblProjectDeadline.Text = $"Ngày hạn: {endDate}";
+            lblUserIdDisplay.Text = $"User ID: {userId}";
 
-            isLoadingStatus = true;
             cboProjectStatus.SelectedItem = status;
-            isLoadingStatus = false;
+            cboProjectStatus.SelectedIndexChanged += cboProjectStatus_SelectedIndexChanged;
 
-            lblUserName.Text = $"Chào mừng, {userName}";
-            lblUserAvatar.Text = GetInitials(userName);
+            dgvTasks.CellDoubleClick += DgvTasks_CellDoubleClick;
 
-            InitializeStyles();
-            LoadTasksFromApi();
-
-            this.FormClosed += ProjectView_FormClosed;
+            LoadProjectData();
+            this.FormClosed += (s, e) =>
+            {
+                if (hasChanges) this.DialogResult = DialogResult.OK;
+            };
+            
+            isLoadingData = false;  // SET FALSE AFTER LOADING
         }
 
-        private void ProjectView_FormClosed(object sender, FormClosedEventArgs e)
+        private async void LoadProjectData()
         {
-            if (hasChanges)
-            {
-                this.DialogResult = DialogResult.OK;
-            }
-            else
-            {
-                this.DialogResult = DialogResult.Cancel;
-            }
+            await LoadTasksFromApi();
+            await LoadProjectMembers();
+            await LoadComments();
         }
 
-        private void InitializeStyles()
-        {
-            lblUserAvatar.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(lblUserAvatar.ClientRectangle, 25))
-                {
-                    lblUserAvatar.Region = new Region(path);
-                }
-            };
-
-            panelProjectInfo.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(panelProjectInfo.ClientRectangle, 8))
-                {
-                    panelProjectInfo.Region = new Region(path);
-                }
-            };
-
-            btnAddTask.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(btnAddTask.ClientRectangle, 5))
-                {
-                    btnAddTask.Region = new Region(path);
-                }
-            };
-
-            panelToDo.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(panelToDo.ClientRectangle, 8))
-                {
-                    panelToDo.Region = new Region(path);
-                }
-            };
-
-            panelInProgress.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(panelInProgress.ClientRectangle, 8))
-                {
-                    panelInProgress.Region = new Region(path);
-                }
-            };
-
-            panelDone.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(panelDone.ClientRectangle, 8))
-                {
-                    panelDone.Region = new Region(path);
-                }
-            };
-
-            if (!string.IsNullOrEmpty(cboProjectStatus.Text))
-            {
-                cboProjectStatus.BackColor = GetStatusBackgroundColor(cboProjectStatus.Text);
-                cboProjectStatus.ForeColor = Color.White;
-            }
-        }
-
-        private System.Drawing.Drawing2D.GraphicsPath GetRoundedRectPath(Rectangle rect, int radius)
-        {
-            var path = new System.Drawing.Drawing2D.GraphicsPath();
-            float r = radius;
-            path.AddArc(rect.X, rect.Y, r, r, 180, 90);
-            path.AddArc(rect.Right - r, rect.Y, r, r, 270, 90);
-            path.AddArc(rect.Right - r, rect.Bottom - r, r, r, 0, 90);
-            path.AddArc(rect.X, rect.Bottom - r, r, r, 90, 90);
-            path.CloseFigure();
-            return path;
-        }
-
-        private string GetInitials(string name)
-        {
-            if (string.IsNullOrEmpty(name)) return "??";
-            var parts = name.Split(' ');
-            if (parts.Length >= 2)
-                return $"{parts[0][0]}{parts[parts.Length - 1][0]}".ToUpper();
-            return name.Length >= 2 ? name.Substring(0, 2).ToUpper() : name.ToUpper();
-        }
-
-        private Color GetStatusBackgroundColor(string status)
-        {
-            return status switch
-            {
-                "Planning" => Color.FromArgb(155, 89, 182),
-                "To Do" => Color.FromArgb(231, 76, 60),
-                "In Progress" => Color.FromArgb(241, 196, 15),
-                "Completed" => Color.FromArgb(46, 204, 113),
-                _ => Color.Gray
-            };
-        }
-
-        private Color GetPriorityColor(string priority)
-        {
-            return priority switch
-            {
-                "High" => Color.FromArgb(231, 76, 60),
-                "Medium" => Color.FromArgb(241, 196, 15),
-                "Low" => Color.FromArgb(46, 204, 113),
-                _ => Color.Gray
-            };
-        }
-
-        private async void LoadTasksFromApi()
+        private async Task LoadTasksFromApi()
         {
             try
             {
                 var response = await ApiHelper.GetAsync($"tasks?ProjectID={projectId}");
-
-                if (ApiHelper.IsUnauthorized(response))
+                
+                if (!response.IsSuccessStatusCode)
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
-                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    AuthManager.Logout();
-                    this.Close();
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    MessageBox.Show($"API Error: {response.StatusCode}\n\nResponse:\n{errorContent}", 
+                        "Lỗi tải tasks", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                var responseContent = await response.Content.ReadAsStringAsync();
+                var json = await response.Content.ReadAsStringAsync();
+                
+                // Debug: Show raw JSON
+                // MessageBox.Show($"JSON Response:\n{json.Substring(0, Math.Min(500, json.Length))}", "Debug JSON", MessageBoxButtons.OK);
+                
+                var result = JsonSerializer.Deserialize<TasksApiResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var result = JsonSerializer.Deserialize<TasksApiResponse>(responseContent, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                    flowToDoTasks.Controls.Clear();
-                    flowInProgressTasks.Controls.Clear();
-                    flowDoneTasks.Controls.Clear();
-
-                    if (result?.Data != null && result.Data.Count > 0)
-                    {
-                        foreach (var task in result.Data)
-                        {
-                            var taskCard = CreateTaskCard(task);
-
-                            switch (task.Status)
-                            {
-                                case "To Do":
-                                    flowToDoTasks.Controls.Add(taskCard);
-                                    break;
-                                case "In Progress":
-                                    flowInProgressTasks.Controls.Add(taskCard);
-                                    break;
-                                case "Done":
-                                    flowDoneTasks.Controls.Add(taskCard);
-                                    break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        ShowEmptyTasksState();
-                    }
-                }
-                else
-                {
-                    MessageBox.Show($"Không thể tải danh sách nhiệm vụ.\nMã lỗi: {response.StatusCode}",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }
-            catch (HttpRequestException ex)
-            {
-                MessageBox.Show($"Không thể kết nối đến server.\nChi tiết: {ex.Message}",
-                    "Lỗi kết nối", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                currentTasks = result?.Data ?? new List<TaskItem>();
+                
+                MessageBox.Show($"Đã load {currentTasks.Count} tasks thành công", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                
+                PopulateTaskGrid();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi tải nhiệm vụ: {ex.Message}",
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Exception: {ex.GetType().Name}\n\nMessage: {ex.Message}\n\nStackTrace:\n{ex.StackTrace}", 
+                    "Lỗi khi tải tasks", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void ShowEmptyTasksState()
-        {
-            var emptyLabel = new Label
-            {
-                Text = "Chưa có nhiệm vụ nào.\nNhấn '+ Nhiệm Vụ Mới' để thêm!",
-                Font = new Font("Segoe UI", 10F, FontStyle.Italic),
-                ForeColor = Color.Gray,
-                AutoSize = false,
-                Size = new Size(300, 60),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-            flowToDoTasks.Controls.Add(emptyLabel);
-        }
-
-        private Panel CreateTaskCard(TaskItem task)
-        {
-            var card = new Panel
-            {
-                Width = 310,
-                Height = 110,
-                BackColor = Color.White,
-                Margin = new Padding(5),
-                Padding = new Padding(10),
-                Cursor = Cursors.Hand,
-                Tag = task
-            };
-
-            var contextMenu = new ContextMenuStrip();
-            contextMenu.Items.Add("📋 Chuyển sang To Do", null, async (s, e) => await ChangeTaskStatus(task, card, "To Do"));
-            contextMenu.Items.Add("⏳ Chuyển sang In Progress", null, async (s, e) => await ChangeTaskStatus(task, card, "In Progress"));
-            contextMenu.Items.Add("✅ Chuyển sang Done", null, async (s, e) => await ChangeTaskStatus(task, card, "Done"));
-            contextMenu.Items.Add(new ToolStripSeparator());
-            contextMenu.Items.Add("🗑️ Xóa nhiệm vụ", null, async (s, e) => await DeleteTask(task.TaskID, card));
-
-            card.ContextMenuStrip = contextMenu;
-
-            var lblTaskName = new Label
-            {
-                Text = task.TaskName,
-                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
-                ForeColor = Color.FromArgb(44, 62, 80),
-                Location = new Point(10, 10),
-                Size = new Size(200, 40),
-                AutoSize = false,
-                ContextMenuStrip = contextMenu
-            };
-
-            DateTime dueDate;
-            DateTime.TryParse(task.DueDate, out dueDate);
-            var lblDueDate = new Label
-            {
-                Text = $"Hạn: {dueDate:dd/MM/yyyy}",
-                Font = new Font("Segoe UI", 8F),
-                ForeColor = Color.Gray,
-                Location = new Point(10, 55),
-                AutoSize = true,
-                ContextMenuStrip = contextMenu
-            };
-
-            var lblPriority = new Label
-            {
-                Text = task.Priority,
-                Font = new Font("Segoe UI", 8F, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = GetPriorityColor(task.Priority),
-                Location = new Point(220, 10),
-                Size = new Size(50, 20),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-
-            lblPriority.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(lblPriority.ClientRectangle, 3))
-                {
-                    lblPriority.Region = new Region(path);
-                }
-            };
-
-            var lblUserInitials = new Label
-            {
-                Text = string.IsNullOrEmpty(task.AssignedToUserID) ? "?" : GetInitials(currentUserName),
-                Font = new Font("Segoe UI", 9F, FontStyle.Bold),
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(88, 86, 214),
-                Location = new Point(220, 75),
-                Size = new Size(30, 30),
-                TextAlign = ContentAlignment.MiddleCenter
-            };
-
-            lblUserInitials.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(lblUserInitials.ClientRectangle, 15))
-                {
-                    lblUserInitials.Region = new Region(path);
-                }
-            };
-
-            var btnChangeStatus = new Button
-            {
-                Text = "⋮",
-                Font = new Font("Segoe UI", 16F, FontStyle.Bold),
-                ForeColor = Color.Gray,
-                BackColor = Color.Transparent,
-                FlatStyle = FlatStyle.Flat,
-                Size = new Size(25, 25),
-                Location = new Point(275, 10),
-                Cursor = Cursors.Hand
-            };
-            btnChangeStatus.FlatAppearance.BorderSize = 0;
-            btnChangeStatus.Click += (s, e) => contextMenu.Show(btnChangeStatus, new Point(0, btnChangeStatus.Height));
-
-            card.Paint += (s, e) =>
-            {
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                using (var path = GetRoundedRectPath(card.ClientRectangle, 8))
-                {
-                    card.Region = new Region(path);
-                }
-            };
-
-            card.Controls.AddRange(new Control[] { lblTaskName, lblDueDate, lblPriority, lblUserInitials, btnChangeStatus });
-
-            card.Click += (s, e) => ShowTaskDetails(task);
-            lblTaskName.Click += (s, e) => ShowTaskDetails(task);
-            lblDueDate.Click += (s, e) => ShowTaskDetails(task);
-
-            return card;
-        }
-
-        private async System.Threading.Tasks.Task ChangeTaskStatus(TaskItem task, Panel taskCard, string newStatus)
+        private void PopulateTaskGrid()
         {
             try
             {
-                taskCard.Enabled = false;
-
-                var updateData = new { Status = newStatus };
-                var response = await ApiHelper.PutAsync($"tasks/{task.TaskID}", updateData);
-
-                if (ApiHelper.IsUnauthorized(response))
+                dgvTasks.Rows.Clear();
+                
+                if (currentTasks == null || currentTasks.Count == 0)
                 {
-                    MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
-                        "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    AuthManager.Logout();
-                    this.Close();
+                    // Don't show message if no tasks
                     return;
                 }
-
-                if (response.IsSuccessStatusCode)
+                
+                foreach (var task in currentTasks)
                 {
-                    hasChanges = true;
-                    task.Status = newStatus;
-
-                    var currentParent = taskCard.Parent as FlowLayoutPanel;
-                    currentParent?.Controls.Remove(taskCard);
-
-                    FlowLayoutPanel targetFlow = newStatus switch
+                    try
                     {
-                        "To Do" => flowToDoTasks,
-                        "In Progress" => flowInProgressTasks,
-                        "Done" => flowDoneTasks,
-                        _ => flowToDoTasks
-                    };
-
-                    targetFlow.Controls.Add(taskCard);
-                    taskCard.Enabled = true;
-
-                    this.Text = $"✓ Đã chuyển sang {newStatus}";
-                    await System.Threading.Tasks.Task.Delay(2000);
-                    this.Text = "Chi Tiết Dự Án";
-                }
-                else
-                {
-                    MessageBox.Show("Không thể cập nhật trạng thái nhiệm vụ.",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    taskCard.Enabled = true;
+                        DateTime.TryParse(task.DueDate, out var dueDate);
+                        var row = dgvTasks.Rows[dgvTasks.Rows.Add()];
+                        row.Cells[0].Value = task.TaskName;
+                        row.Cells[1].Value = task.Status;
+                        
+                        // Get UserName from AssignedUserDetails if available
+                        string assignedName = task.AssignedUserDetails?.UserName ?? task.AssignedToUserName ?? "Chưa giao";
+                        task.AssignedToUserName = task.AssignedUserDetails?.UserName ?? task.AssignedToUserName; // Update property
+                        row.Cells[2].Value = assignedName;
+                        
+                        row.Cells[3].Value = dueDate.ToString("dd/MM/yyyy");
+                        row.Cells[4].Value = task.Priority;
+                        row.Cells[5].Value = task.TaskDescription;
+                        row.Tag = task;
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Lỗi khi thêm task '{task?.TaskName ?? "N/A"}': {ex.Message}", "Debug", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}",
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                taskCard.Enabled = true;
+                MessageBox.Show($"Lỗi PopulateTaskGrid: {ex.Message}\n\n{ex.StackTrace}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private void ShowTaskDetails(TaskItem task)
+        private async Task LoadProjectMembers()
         {
-            var detailsMessage = $"Task: {task.TaskName}\n\n" +
-                               $"Mô tả: {task.TaskDescription}\n\n" +
-                               $"Hạn: {DateTime.Parse(task.DueDate):dd/MM/yyyy}\n" +
-                               $"Ưu tiên: {task.Priority}\n" +
-                               $"Trạng thái: {task.Status}\n\n" +
-                               $"Task ID: {task.TaskID}";
-
-            MessageBox.Show(detailsMessage, "Chi Tiết Nhiệm Vụ",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private async System.Threading.Tasks.Task DeleteTask(string taskId, Panel taskCard)
-        {
-            var result = MessageBox.Show(
-                "Bạn có chắc chắn muốn xóa nhiệm vụ này?",
-                "Xác nhận xóa",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Warning
-            );
-
-            if (result == DialogResult.Yes)
+            try
             {
-                try
-                {
-                    taskCard.Enabled = false;
+                var response = await ApiHelper.GetAsync($"projects/{projectId}/members");
+                if (!response.IsSuccessStatusCode) return;
 
-                    var response = await ApiHelper.DeleteAsync($"tasks/{taskId}");
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<MembersResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-                    if (ApiHelper.IsUnauthorized(response))
-                    {
-                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
-                            "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        AuthManager.Logout();
-                        this.Close();
-                        return;
-                    }
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        hasChanges = true;
-
-                        var parentFlow = taskCard.Parent as FlowLayoutPanel;
-                        parentFlow?.Controls.Remove(taskCard);
-                        taskCard.Dispose();
-
-                        MessageBox.Show("Xóa nhiệm vụ thành công!", "Thành công",
-                            MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Xóa nhiệm vụ thất bại!\n{responseContent}",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        taskCard.Enabled = true;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Lỗi khi xóa nhiệm vụ: {ex.Message}",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    taskCard.Enabled = true;
-                }
+                projectMembers = result?.Members ?? new List<ProjectMember>();
+                var names = projectMembers.Select(m => m.UserName).Take(5);
+                lblMembersList.Text = $"Thành viên: {string.Join(", ", names)}";
+                if (projectMembers.Count > 5) lblMembersList.Text += $" và {projectMembers.Count - 5} người khác";
             }
+            catch { }
         }
 
-        private void btnBack_Click(object sender, EventArgs e)
+        private async Task LoadComments()
         {
-            this.Close();
+            try
+            {
+                var response = await ApiHelper.GetAsync($"projects/{projectId}/comments");
+                if (!response.IsSuccessStatusCode) return;
+
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<CommentsResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                flowComments.Controls.Clear();
+                foreach (var comment in result?.Data ?? new List<Comment>())
+                {
+                    var lbl = new Label
+                    {
+                        Text = $"{comment.UserName}: {comment.Content}",
+                        AutoSize = true,
+                        MaximumSize = new Size(flowComments.Width - 30, 0),
+                        Margin = new Padding(5)
+                    };
+                    flowComments.Controls.Add(lbl);
+                }
+            }
+            catch { }
+        }
+
+        private void btnAddMember_Click(object sender, EventArgs e)
+        {
+            var dialog = new AddMemberDialog(projectId);
+            if (dialog.ShowDialog() == DialogResult.OK || dialog.MemberAdded || dialog.MemberRemoved)
+            {
+                hasChanges = true;
+                LoadProjectMembers();
+            }
         }
 
         private void btnAddTask_Click(object sender, EventArgs e)
@@ -546,54 +196,95 @@ namespace MyProject
             }
         }
 
-        private async void cboProjectStatus_SelectedIndexChanged(object sender, EventArgs e)
+        private async void btnSendComment_Click(object sender, EventArgs e)
         {
-            if (isLoadingStatus) return;
-
-            if (cboProjectStatus.SelectedItem != null)
+            if (string.IsNullOrWhiteSpace(txtNewComment.Text)) return;
+            try
             {
-                string newStatus = cboProjectStatus.SelectedItem.ToString();
-                cboProjectStatus.BackColor = GetStatusBackgroundColor(newStatus);
-
-                try
+                var response = await ApiHelper.PostAsync($"projects/{projectId}/comments", new { content = txtNewComment.Text.Trim() });
+                if (response.IsSuccessStatusCode)
                 {
-                    var updateData = new { Status = newStatus };
-                    var response = await ApiHelper.PutAsync($"projects/{projectId}", updateData);
-
-                    if (ApiHelper.IsUnauthorized(response))
-                    {
-                        MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!",
-                            "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        AuthManager.Logout();
-                        this.Close();
-                        return;
-                    }
-
-                    var responseContent = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        hasChanges = true;
-                        MessageBox.Show($"Cập nhật trạng thái dự án thành: {newStatus}",
-                            "Cập Nhật Thành Công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                    }
-                    else
-                    {
-                        MessageBox.Show($"Không thể cập nhật trạng thái dự án.\nResponse: {responseContent}",
-                            "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    }
+                    txtNewComment.Clear();
+                    await LoadComments();
+                    hasChanges = true;
                 }
-                catch (Exception ex)
+            }
+            catch { }
+        }
+
+        private void btnBack_Click(object sender, EventArgs e) => this.Close();
+
+        private void DgvTasks_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            var row = dgvTasks.Rows[e.RowIndex];
+            var task = row.Tag as TaskItem;
+            if (task != null)
+            {
+                var dialog = new TaskDetailDialog(task, projectId);
+                if (dialog.ShowDialog() == DialogResult.OK || dialog.TaskUpdated)
                 {
-                    MessageBox.Show($"Lỗi khi cập nhật trạng thái: {ex.Message}",
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    hasChanges = true;
+                    LoadTasksFromApi();
                 }
             }
         }
 
-        private void lblProjectDescription_Click(object sender, EventArgs e)
+        private async void cboProjectStatus_SelectedIndexChanged(object sender, EventArgs e)
         {
-
+            if (isLoadingData) return;  // PREVENT UPDATE DURING LOAD
+            
+            if (cboProjectStatus.SelectedItem != null)
+            {
+                string newStatus = cboProjectStatus.SelectedItem.ToString();
+                try
+                {
+                    var updateData = new { Status = newStatus };
+                    var response = await ApiHelper.PutAsync($"projects/{projectId}", updateData);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        hasChanges = true;
+                        MessageBox.Show($"Cập nhật trạng thái: {newStatus}", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                }
+                catch { }
+            }
         }
+
+        public class TaskItem
+        {
+            public string TaskID { get; set; }
+            public string TaskName { get; set; }
+            public string TaskDescription { get; set; }
+            public string DueDate { get; set; }
+            public string Priority { get; set; }
+            public string Status { get; set; }
+            public string AssignedToUserName { get; set; }
+            public AssignedUserDetails AssignedUserDetails { get; set; }
+        }
+
+        public class AssignedUserDetails
+        {
+            public string UserID { get; set; }
+            public string UserName { get; set; }
+            public string Email { get; set; }
+        }
+
+        public class ProjectMember
+        {
+            public string UserID { get; set; }
+            public string UserName { get; set; }
+        }
+
+        public class Comment
+        {
+            public string UserName { get; set; }
+            public string Content { get; set; }
+        }
+
+        public class TasksApiResponse { public List<TaskItem> Data { get; set; } }
+        public class MembersResponse { public List<ProjectMember> Members { get; set; } }
+        public class CommentsResponse { public List<Comment> Data { get; set; } }
     }
 }

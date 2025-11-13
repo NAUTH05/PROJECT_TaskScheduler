@@ -42,6 +42,8 @@
             lblDueDate = new Label();
             lblPriority = new Label();
             dtpDueDate = new DateTimePicker();
+            lblAssignTo = new Label();
+            cboAssignTo = new ComboBox();
             panelMain.SuspendLayout();
             SuspendLayout();
             // 
@@ -61,6 +63,8 @@
             panelMain.Controls.Add(lblDueDate);
             panelMain.Controls.Add(lblPriority);
             panelMain.Controls.Add(dtpDueDate);
+            panelMain.Controls.Add(lblAssignTo);
+            panelMain.Controls.Add(cboAssignTo);
             panelMain.Dock = DockStyle.Fill;
             panelMain.Location = new Point(0, 0);
             panelMain.Name = "panelMain";
@@ -138,7 +142,7 @@
             cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
             cboStatus.Font = new Font("Segoe UI", 11F);
             cboStatus.FormattingEnabled = true;
-            cboStatus.Items.AddRange(new object[] { "To Do", "In Progress", "Done" });
+            cboStatus.Items.AddRange(new object[] { "Backlog", "To Do", "In Progress", "In Review", "Testing", "Blocked", "Completed", "Cancelled" });
             cboStatus.Location = new Point(290, 415);
             cboStatus.Name = "cboStatus";
             cboStatus.Size = new Size(220, 28);
@@ -185,7 +189,7 @@
             cboPriority.DropDownStyle = ComboBoxStyle.DropDownList;
             cboPriority.Font = new Font("Segoe UI", 11F);
             cboPriority.FormattingEnabled = true;
-            cboPriority.Items.AddRange(new object[] { "Low", "Medium", "High" });
+            cboPriority.Items.AddRange(new object[] { "Low", "Medium", "High", "Urgent" });
             cboPriority.Location = new Point(30, 415);
             cboPriority.Name = "cboPriority";
             cboPriority.Size = new Size(220, 28);
@@ -223,6 +227,27 @@
             dtpDueDate.Size = new Size(220, 27);
             dtpDueDate.TabIndex = 6;
             // 
+            // lblAssignTo
+            // 
+            lblAssignTo.AutoSize = true;
+            lblAssignTo.Font = new Font("Segoe UI", 10F);
+            lblAssignTo.ForeColor = Color.FromArgb(44, 62, 80);
+            lblAssignTo.Location = new Point(290, 315);
+            lblAssignTo.Name = "lblAssignTo";
+            lblAssignTo.Size = new Size(96, 19);
+            lblAssignTo.TabIndex = 13;
+            lblAssignTo.Text = "Người Giao *";
+            // 
+            // cboAssignTo
+            // 
+            cboAssignTo.DropDownStyle = ComboBoxStyle.DropDownList;
+            cboAssignTo.Font = new Font("Segoe UI", 11F);
+            cboAssignTo.FormattingEnabled = true;
+            cboAssignTo.Location = new Point(290, 340);
+            cboAssignTo.Name = "cboAssignTo";
+            cboAssignTo.Size = new Size(220, 28);
+            cboAssignTo.TabIndex = 14;
+            // 
             // TaskForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -257,5 +282,7 @@
         private System.Windows.Forms.ComboBox cboStatus;
         private System.Windows.Forms.Button btnCancel;
         private System.Windows.Forms.Button btnCreate;
+        private System.Windows.Forms.Label lblAssignTo;
+        private System.Windows.Forms.ComboBox cboAssignTo;
     }
 }

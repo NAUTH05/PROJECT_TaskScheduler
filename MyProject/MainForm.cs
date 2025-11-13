@@ -72,15 +72,21 @@ namespace MyProject
             };
             panelProjectsList.Controls.Add(flowProjectsList);
 
-            lblTasksTitle.Text = "Dự Án Gần Đây";
+            lblTasksTitle.Text = "Nhiệm Vụ Gần Đây";
             
-            lblToDoTitle.Text = "In Progress Gần Đây";
-            lblInProgressTitle.Text = "To Do Gần Đây";
-            lblDoneTitle.Text = "Completed Gần Đây";
+            panelTaskColumns.Controls.Clear();
             
-            panelToDo.Controls.Clear();
-            panelInProgress.Controls.Clear();
-            panelDone.Controls.Clear();
+            var flowRecentProjects = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoScroll = true,
+                Padding = new Padding(15),
+                BackColor = Color.White
+            };
+            
+            panelTaskColumns.Controls.Add(flowRecentProjects);
 
             UpdateRecentProjectsDisplay();
         }
@@ -107,9 +113,10 @@ namespace MyProject
 
             try
             {
-                var response = await ApiHelper.GetAsync($"projects?OwnerUserID={currentUserId}");
+                // Load owned projects
+                var ownedResponse = await ApiHelper.GetAsync($"projects?OwnerUserID={currentUserId}");
                 
-                if (ApiHelper.IsUnauthorized(response))
+                if (ApiHelper.IsUnauthorized(ownedResponse))
                 {
                     MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!", 
                         "Hết phiên", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -117,53 +124,91 @@ namespace MyProject
                     this.Close();
                     return;
                 }
-                
-                var responseContent = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode)
+                // Load shared projects (where user is member)
+                var sharedResponse = await ApiHelper.GetAsync("projects/shared/list");
+                
+                flowProjectsList.Controls.Clear();
+                currentProjects.Clear();
+
+                // Process owned projects
+                if (ownedResponse.IsSuccessStatusCode)
                 {
-                    var result = JsonSerializer.Deserialize<ProjectsApiResponse>(responseContent, new JsonSerializerOptions
+                    var ownedContent = await ownedResponse.Content.ReadAsStringAsync();
+                    var ownedResult = JsonSerializer.Deserialize<ProjectsApiResponse>(ownedContent, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     });
 
-                    flowProjectsList.Controls.Clear();
-                    currentProjects.Clear();
-
-                    if (result?.Data != null && result.Data.Count > 0)
+                    if (ownedResult?.Data != null)
                     {
-                        currentProjects = result.Data;
-                        
-                        foreach (var project in result.Data)
+                        currentProjects.AddRange(ownedResult.Data);
+                    }
+                }
+
+                // Process shared projects
+                if (sharedResponse.IsSuccessStatusCode)
+                {
+                    var sharedContent = await sharedResponse.Content.ReadAsStringAsync();
+                    var sharedResult = JsonSerializer.Deserialize<SharedProjectsResponse>(sharedContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (sharedResult?.Projects != null)
+                    {
+                        // Convert SharedProjectData to ProjectData
+                        foreach (var sharedProject in sharedResult.Projects)
                         {
-                            DateTime endDate;
-                            DateTime.TryParse(project.EndDate, out endDate);
-
-                            int progress = CalculateProgress(project.Status);
-
-                            AddProjectItem(
-                                project.ProjectName,
-                                endDate.ToString("dd/MM/yyyy"),
-                                progress,
-                                project.Status,
-                                new[] { GetInitials(currentUserName) },
-                                project.ProjectID
-                            );
+                            // Avoid duplicates (in case user is both owner and member)
+                            if (!currentProjects.Any(p => p.ProjectID == sharedProject.ProjectID))
+                            {
+                                currentProjects.Add(new ProjectData
+                                {
+                                    ProjectID = sharedProject.ProjectID,
+                                    ProjectName = sharedProject.ProjectName,
+                                    ProjectDescription = sharedProject.ProjectDescription,
+                                    StartDate = sharedProject.StartDate,
+                                    EndDate = sharedProject.EndDate,
+                                    Status = sharedProject.Status,
+                                    OwnerUserID = sharedProject.OwnerUserID
+                                });
+                            }
                         }
+                    }
+                }
 
-                        UpdateStatistics();
-                    }
-                    else
+                // Display all projects
+                if (currentProjects.Count > 0)
+                {
+                    foreach (var project in currentProjects)
                     {
-                        ShowEmptyState();
-                        UpdateStatistics();
+                        DateTime endDate;
+                        DateTime.TryParse(project.EndDate, out endDate);
+
+                        int progress = CalculateProgress(project.Status);
+
+                        // Show badge if user is member (not owner)
+                        bool isMember = project.OwnerUserID != currentUserId;
+                        string titlePrefix = isMember ? "👥 " : "";
+
+                        AddProjectItem(
+                            titlePrefix + project.ProjectName,
+                            endDate.ToString("dd/MM/yyyy"),
+                            progress,
+                            project.Status,
+                            new[] { GetInitials(currentUserName) },
+                            project.ProjectID,
+                            isMember
+                        );
                     }
+
+                    UpdateStatistics();
                 }
                 else
                 {
-                    MessageBox.Show($"Không thể tải danh sách dự án.\nMã lỗi: {response.StatusCode}", 
-                        "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    LoadSampleProjects();
+                    ShowEmptyState();
+                    UpdateStatistics();
                 }
             }
             catch (HttpRequestException ex)
@@ -260,10 +305,15 @@ namespace MyProject
 
         private void AddProjectItem(string title, string deadline, int progress, string status, string[] members)
         {
-            AddProjectItem(title, deadline, progress, status, members, null);
+            AddProjectItem(title, deadline, progress, status, members, null, false);
         }
 
         private void AddProjectItem(string title, string deadline, int progress, string status, string[] members, string projectId)
+        {
+            AddProjectItem(title, deadline, progress, status, members, projectId, false);
+        }
+
+        private void AddProjectItem(string title, string deadline, int progress, string status, string[] members, string projectId, bool isMemberProject)
         {
             var projectPanel = new Panel
             {
@@ -468,107 +518,93 @@ namespace MyProject
 
         private void UpdateRecentProjectsDisplay()
         {
-            panelToDo.Controls.Clear();
-            panelInProgress.Controls.Clear();
-            panelDone.Controls.Clear();
+            var flowRecentProjects = panelTaskColumns.Controls.OfType<FlowLayoutPanel>().FirstOrDefault();
+            if (flowRecentProjects == null) return;
+            
+            flowRecentProjects.Controls.Clear();
 
             if (recentProjects.Count == 0)
             {
                 var emptyLabel = new Label
                 {
                     Text = "Chưa có dự án gần đây\n\nNhấn vào dự án để xem chi tiết",
-                    Font = new Font("Segoe UI", 10F, FontStyle.Italic),
+                    Font = new Font("Segoe UI", 11F, FontStyle.Italic),
                     ForeColor = Color.Gray,
                     AutoSize = false,
-                    Size = new Size(panelTaskColumns.Width - 40, 100),
+                    Size = new Size(flowRecentProjects.Width - 40, 100),
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Location = new Point(20, 80)
+                    Margin = new Padding(10)
                 };
-                panelToDo.Controls.Add(emptyLabel);
+                flowRecentProjects.Controls.Add(emptyLabel);
                 return;
             }
 
-            var inProgressProjects = recentProjects.Where(p => p.Status == "In Progress").ToList();
-            var toDoProjects = recentProjects.Where(p => p.Status == "To Do").ToList();
-            var completedProjects = recentProjects.Where(p => p.Status == "Completed").ToList();
-
-            AddRecentProjectsToPanel(panelToDo, inProgressProjects, "In Progress");
-            AddRecentProjectsToPanel(panelInProgress, toDoProjects, "To Do");
-            AddRecentProjectsToPanel(panelDone, completedProjects, "Completed");
-        }
-
-        private void AddRecentProjectsToPanel(Panel targetPanel, List<ProjectData> projects, string statusType)
-        {
-            if (projects.Count == 0)
-            {
-                var emptyLabel = new Label
-                {
-                    Text = $"Chưa có dự án\n{statusType} gần đây",
-                    Font = new Font("Segoe UI", 9F, FontStyle.Italic),
-                    ForeColor = Color.Gray,
-                    AutoSize = false,
-                    Size = new Size(targetPanel.Width - 30, 60),
-                    TextAlign = ContentAlignment.MiddleCenter,
-                    Location = new Point(15, 50)
-                };
-                targetPanel.Controls.Add(emptyLabel);
-                return;
-            }
-
-            int yPos = 50;
-            foreach (var project in projects.Take(3))
+            foreach (var project in recentProjects.Take(10))
             {
                 DateTime endDate;
                 DateTime.TryParse(project.EndDate, out endDate);
 
                 var recentCard = new Panel
                 {
-                    Width = targetPanel.Width - 30,
-                    Height = 80,
+                    Width = flowRecentProjects.Width - 50,
+                    Height = 90,
                     BackColor = Color.FromArgb(250, 250, 250),
-                    Location = new Point(15, yPos),
+                    Margin = new Padding(10, 5, 10, 5),
                     Cursor = Cursors.Hand,
                     Tag = project.ProjectID
                 };
 
                 var lblName = new Label
                 {
-                    Text = project.ProjectName.Length > 25 ? project.ProjectName.Substring(0, 25) + "..." : project.ProjectName,
-                    Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                    Text = project.ProjectName.Length > 40 ? project.ProjectName.Substring(0, 40) + "..." : project.ProjectName,
+                    Font = new Font("Segoe UI", 11F, FontStyle.Bold),
                     ForeColor = Color.FromArgb(88, 86, 214),
-                    Location = new Point(10, 10),
-                    Size = new Size(recentCard.Width - 20, 25),
+                    Location = new Point(15, 15),
+                    Size = new Size(recentCard.Width - 150, 25),
                     Cursor = Cursors.Hand
                 };
 
                 var lblDate = new Label
                 {
                     Text = $"Hạn: {endDate:dd/MM/yyyy}",
-                    Font = new Font("Segoe UI", 8F),
+                    Font = new Font("Segoe UI", 9F),
                     ForeColor = Color.Gray,
-                    Location = new Point(10, 40),
+                    Location = new Point(15, 45),
                     AutoSize = true,
                     Cursor = Cursors.Hand
                 };
 
-                var lblStatusSmall = new Label
+                var lblStatusBadge = new Label
                 {
-                    Text = project.Status,
-                    Font = new Font("Segoe UI", 7F, FontStyle.Bold),
+                    Text = GetStatusEmoji(project.Status) + " " + project.Status,
+                    Font = new Font("Segoe UI", 9F, FontStyle.Bold),
                     ForeColor = Color.White,
                     BackColor = GetStatusColor(project.Status),
-                    Location = new Point(10, 58),
-                    Size = new Size(80, 18),
-                    TextAlign = ContentAlignment.MiddleCenter
+                    Location = new Point(recentCard.Width - 130, 15),
+                    Size = new Size(120, 25),
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Cursor = Cursors.Hand
                 };
 
-                lblStatusSmall.Paint += (s, e) =>
+                lblStatusBadge.Paint += (s, e) =>
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (var path = GetRoundedRectPath(lblStatusSmall.ClientRectangle, 3))
+                    using (var path = GetRoundedRectPath(lblStatusBadge.ClientRectangle, 5))
                     {
-                        lblStatusSmall.Region = new Region(path);
+                        lblStatusBadge.Region = new Region(path);
                     }
+                };
+
+                var lblDescription = new Label
+                {
+                    Text = project.ProjectDescription?.Length > 50 
+                        ? project.ProjectDescription.Substring(0, 50) + "..." 
+                        : (project.ProjectDescription ?? "Không có mô tả"),
+                    Font = new Font("Segoe UI", 8F),
+                    ForeColor = Color.Gray,
+                    Location = new Point(15, 65),
+                    Size = new Size(recentCard.Width - 30, 20),
+                    Cursor = Cursors.Hand
                 };
 
                 EventHandler clickHandler = (s, e) =>
@@ -592,21 +628,92 @@ namespace MyProject
                 recentCard.Click += clickHandler;
                 lblName.Click += clickHandler;
                 lblDate.Click += clickHandler;
+                lblStatusBadge.Click += clickHandler;
+                lblDescription.Click += clickHandler;
 
                 recentCard.Paint += (s, e) =>
                 {
                     e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                    using (var path = GetRoundedRectPath(recentCard.ClientRectangle, 5))
+                    using (var path = GetRoundedRectPath(recentCard.ClientRectangle, 8))
                     {
                         recentCard.Region = new Region(path);
                     }
                 };
 
-                recentCard.Controls.AddRange(new Control[] { lblName, lblDate, lblStatusSmall });
-                targetPanel.Controls.Add(recentCard);
-
-                yPos += 90;
+                recentCard.Controls.AddRange(new Control[] { lblName, lblDate, lblStatusBadge, lblDescription });
+                flowRecentProjects.Controls.Add(recentCard);
             }
+        }
+
+        private string GetStatusEmoji(string status)
+        {
+            return status switch
+            {
+                "Planning" => "📋",
+                "Active" => "🚀",
+                "In Progress" => "⚡",
+                "On Hold" => "⏸️",
+                "Completed" => "✅",
+                "Cancelled" => "❌",
+                "To Do" => "📝",
+                _ => "📋"
+            };
+        }
+
+        private void btnAddProject_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                MessageBox.Show("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", 
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            using (var addProjectForm = new AddProject(currentUserId))
+            {
+                if (addProjectForm.ShowDialog() == DialogResult.OK && addProjectForm.IsSuccess)
+                {
+                    LoadProjectsFromApi();
+                }
+            }
+        }
+
+        private Color GetStatusColor(string status)
+        {
+            return status switch
+            {
+                "Planning" => Color.FromArgb(155, 89, 182),
+                "Active" => Color.FromArgb(46, 204, 113),
+                "On Hold" => Color.FromArgb(243, 156, 18),
+                "Completed" => Color.FromArgb(46, 204, 113),
+                "Cancelled" => Color.FromArgb(149, 165, 166),
+                "To Do" => Color.FromArgb(231, 76, 60),
+                "In Progress" => Color.FromArgb(241, 196, 15),
+                _ => Color.Gray
+            };
+        }
+
+        private void UpdateStatistics()
+        {
+            if (currentProjects == null || currentProjects.Count == 0)
+            {
+                lblStat1Value.Text = "0";
+                lblStat2Value.Text = "0";
+                lblStat3Value.Text = "0";
+                return;
+            }
+
+            int totalProjects = currentProjects.Count;
+            int inProgressCount = currentProjects.Count(p => p.Status == "In Progress");
+            int completedCount = currentProjects.Count(p => p.Status == "Completed");
+
+            lblStat1Value.Text = totalProjects.ToString();
+            lblStat2Value.Text = inProgressCount.ToString();
+            lblStat3Value.Text = completedCount.ToString();
+        }
+
+        private void AddRecentProjectsToPanel(Panel targetPanel, List<ProjectData> projects, string statusType)
+        {
         }
 
         private async Task DeleteProject(string projectId, Panel projectPanel)
@@ -673,54 +780,6 @@ namespace MyProject
                 projectPanel.Enabled = true;
             }
         }
-
-        private Color GetStatusColor(string status)
-        {
-            return status switch
-            {
-                "To Do" => Color.FromArgb(231, 76, 60),
-                "In Progress" => Color.FromArgb(241, 196, 15),
-                "Completed" => Color.FromArgb(46, 204, 113),
-                _ => Color.Gray
-            };
-        }
-
-        private void btnAddProject_Click(object sender, EventArgs e)
-        {
-            if (string.IsNullOrEmpty(currentUserId))
-            {
-                MessageBox.Show("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.", 
-                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            using (var addProjectForm = new AddProject(currentUserId))
-            {
-                if (addProjectForm.ShowDialog() == DialogResult.OK && addProjectForm.IsSuccess)
-                {
-                    LoadProjectsFromApi();
-                }
-            }
-        }
-
-        private void UpdateStatistics()
-        {
-            if (currentProjects == null || currentProjects.Count == 0)
-            {
-                lblStat1Value.Text = "0";
-                lblStat2Value.Text = "0";
-                lblStat3Value.Text = "0";
-                return;
-            }
-
-            int totalProjects = currentProjects.Count;
-            int inProgressCount = currentProjects.Count(p => p.Status == "In Progress");
-            int completedCount = currentProjects.Count(p => p.Status == "Completed");
-
-            lblStat1Value.Text = totalProjects.ToString();
-            lblStat2Value.Text = inProgressCount.ToString();
-            lblStat3Value.Text = completedCount.ToString();
-        }
     }
 
     public class ProjectsApiResponse
@@ -734,6 +793,22 @@ namespace MyProject
         [System.Text.Json.Serialization.JsonPropertyName("ProjectID")]
         public string ProjectID { get; set; }
         
+        public string ProjectName { get; set; }
+        public string ProjectDescription { get; set; }
+        public string StartDate { get; set; }
+        public string EndDate { get; set; }
+        public string Status { get; set; }
+        public string OwnerUserID { get; set; }
+    }
+
+    public class SharedProjectsResponse
+    {
+        public List<SharedProjectData> Projects { get; set; }
+    }
+
+    public class SharedProjectData
+    {
+        public string ProjectID { get; set; }
         public string ProjectName { get; set; }
         public string ProjectDescription { get; set; }
         public string StartDate { get; set; }
